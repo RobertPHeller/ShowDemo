@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260130.1316>
+#  Last Modified : <260130.1450>
 #
 #  Description	
 #
@@ -209,7 +209,7 @@ class UnderStation(object):
                                     self.__PlatformStairTotalRise,
                                     self.__PlatformStairWidth)
         #debug("*** UnderStation.__init__(): platformStairLen = %f",platformStairLen)
-        self.platform1Stair = self.__makeStairsRev(origin.add(Base.Vector(
+        self.platform1Stair = self.__makeStairs(origin.add(Base.Vector(
                                                     self.__TotalStationLength-\
                                                     self.__ShortPlatformLength,
                                                     self.__CombinedTrackAndPlatformWidth-\
@@ -218,7 +218,7 @@ class UnderStation(object):
                                        self.__PlatformStairTotalRise,
                                        self.__PlatformStairWidth,
                                        Elevator.ShaftWidth)
-        self.platform2Stair = self.__makeStairsRev(origin.add(Base.Vector(
+        self.platform2Stair = self.__makeStairs(origin.add(Base.Vector(
                                                     self.__TotalStationLength-\
                                                     self.__ShortPlatformLength,
                                                     0,
@@ -232,17 +232,55 @@ class UnderStation(object):
                    .extrude(Base.Vector(0,0,-self.__WallWidth))
         self.platform1Elevator = Elevator(
             "Platform1Elevator",
-            self.origin.add(Base.Vector(self.__ShortPlatformLength-(2*Elevator.ShaftLength),
-                                        self.__CombinedTrackAndPlatformWidth-Elevator.ShaftWidth,
+            self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
+                                        self.__CombinedTrackAndPlatformWidth-Elevator.ShaftLength,
                                         -(self.__TotalStationHeight+self.__StationUnderOffset))),
             self.__PlatformStairTotalRise)            
         self.platform2Elevator = Elevator(
             "Platform2Elevator",
-            self.origin.add(Base.Vector(self.__ShortPlatformLength-(2*Elevator.ShaftLength),
+            self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
                                         0,
                                         -(self.__TotalStationHeight+self.__StationUnderOffset))),
-            self.__PlatformStairTotalRise)            
-                                        
+            self.__PlatformStairTotalRise)
+        platformBaseHeight = self.__PlatformHeight-Units.mm(Units.HOScale(12))
+        platformBaseExtrude = Base.Vector(0,0,platformBaseHeight)
+        platformBaseWidth = self.__PlatformWidth-Units.mm(Units.HOScale(12))
+        p1borigin = origin.add(Base.Vector(
+                                        0,
+                                        self.__CombinedTrackAndPlatformWidth-\
+                                            self.__PlatformWidth+\
+                                            Units.mm(Units.HOScale(12)),
+                                        0))
+        platform = Part.makePlane(self.__LongPlatformLength,
+                                  platformBaseWidth,
+                                  p1borigin)\
+                 .extrude(platformBaseExtrude)
+        platformTopExtrude = Base.Vector(0,0,Units.mm(Units.HOScale(12)))
+        p1origin = origin.add(Base.Vector(
+                                0,
+                                self.__CombinedTrackAndPlatformWidth-\
+                                    self.__PlatformWidth,
+                                self.__PlatformHeight-\
+                                    Units.mm(Units.HOScale(12))))
+        self.platform1 = platform.fuse(
+            Part.makePlane(self.__LongPlatformLength,
+                           self.__PlatformWidth,
+                           p1origin)\
+                 .extrude(platformTopExtrude))
+        platform = Part.makePlane(self.__LongPlatformLength,
+                                  platformBaseWidth,
+                                  origin)\
+                 .extrude(platformBaseExtrude)
+        self.platform2 = platform.fuse(
+            Part.makePlane(self.__LongPlatformLength,
+                           self.__PlatformWidth,
+                           origin.add(
+                            Base.Vector(
+                                0,
+                                0,
+                                self.__PlatformHeight-\
+                                    Units.mm(Units.HOScale(12)))))\
+                 .extrude(platformTopExtrude))
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -265,6 +303,14 @@ class UnderStation(object):
         obj.ViewObject.ShapeColor=self.__FloorColor
         self.platform1Elevator.show(doc)
         self.platform2Elevator.show(doc)
+        obj = doc.addObject("Part::Feature",self.name+"_Platform1")
+        obj.Shape = self.platform1
+        obj.Label=self.name+"_Platform1"
+        obj.ViewObject.ShapeColor=self.__StairsColor
+        obj = doc.addObject("Part::Feature",self.name+"_Platform2")
+        obj.Shape = self.platform2
+        obj.Label=self.name+"_Platform2"
+        obj.ViewObject.ShapeColor=self.__StairsColor
 
 if __name__ == '__main__':
     if "UnderStation" in App.listDocuments().keys():
