@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260130.1450>
+#  Last Modified : <260201.1647>
 #
 #  Description	
 #
@@ -86,8 +86,11 @@ class UnderStation(object):
     __LongPlatformLength  = Units.mm(22.5)
     __PlatformWidth       = Units.mm(2.3)
     __PlatformHeight      = Units.mm(Units.HOScale(51))
+    __PlatformRoofHeight  = Units.mm(Units.HOScale(Units.inches(14)))
     __CombinedTrackAndPlatformWidth = Units.mm(8.1)
-    __WallWidth = Units.HOScale(Units.mm(6))
+    __MainWallWidth = Units.HOScale(Units.mm(6))
+    __GlassWallWidth  = Units.HOScale(Units.mm(3))
+    
     # Total platform edge-to-edge + 
     #                Wall + 
     #                Street elevator shaft + 
@@ -95,7 +98,7 @@ class UnderStation(object):
     @property
     def __TotalStationDepth(self):
         return self.__CombinedTrackAndPlatformWidth +\
-            self.__WallWidth+\
+            self.__MainWallWidth+\
             Elevator.ShaftWidth +\
             Units.HOScale(Units.mm(Units.inches(14)))
     __TotalStationLength = Units.mm(22.5)
@@ -103,6 +106,7 @@ class UnderStation(object):
     __StationUnderOffset = Units.mm(.25+1)
     __StairRiser         = Units.mm(Units.HOScale(5.5))
     __StairTread         = Units.mm(Units.HOScale(11))
+    __CurbHeight         = Units.mm(Units.HOScale(6))
     @property
     def __StairRiseRatio(self):
         return self.__StairTread/self.__StairRiser
@@ -118,7 +122,7 @@ class UnderStation(object):
         return self.__StreetStairWidth
     @property
     def __StreetStairTotalRise(self):
-        return self.__TotalStationHeight + self.__StationUnderOffset
+        return self.__TotalStationHeight + self.__StationUnderOffset + self.__CurbHeight
     @property
     def __PlatformStairTotalRise(self):
         return self.__TotalStationHeight + \
@@ -189,19 +193,21 @@ class UnderStation(object):
         self.streetElevator = Elevator(
             "StreetElevator",    
             self.origin.add(Base.Vector(self.__LongPlatformLength-Elevator.ShaftLength-Units.HOScale(Units.mm(Units.inches(5))),
-                            Units.mm(8.1),
+                            Units.mm(8.1)+self.__MainWallWidth,
                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
-            self.__TotalStationHeight+self.__StationUnderOffset)
+            self.__TotalStationHeight+self.__StationUnderOffset+self.__CurbHeight)
         streetStairLen = self.__TotalStairLength(self.__StreetStairTotalRise,
                                                  self.__StreetStairWidth)
         #debug("*** UnderStation.__init__(): streetStairLen = %f",streetStairLen)
-        self.streetStair = self.__makeStairs(origin.add(Base.Vector(
-                                                    self.__TotalStationLength-\
-                                                    streetStairLen-\
-                                                    (2*Elevator.ShaftWidth),
-                                                    self.__TotalStationDepth-\
-                                                    self.__StreetStairWidth,
-                                                    -(self.__TotalStationHeight+self.__StationUnderOffset))),
+        self.streetStairOrigin = origin.add(Base.Vector(
+                                          self.__TotalStationLength-\
+                                          streetStairLen-\
+                                          (2*Elevator.ShaftWidth),
+                                          self.__TotalStationDepth-\
+                                          self.__StreetStairWidth+\
+                                          self.__MainWallWidth,
+                                         -(self.__TotalStationHeight+self.__StationUnderOffset)))
+        self.streetStair = self.__makeStairs(self.streetStairOrigin,
                                         self.__StreetStairTotalRise,
                                         self.__StreetStairWidth,
                                         Elevator.ShaftWidth)
@@ -209,39 +215,88 @@ class UnderStation(object):
                                     self.__PlatformStairTotalRise,
                                     self.__PlatformStairWidth)
         #debug("*** UnderStation.__init__(): platformStairLen = %f",platformStairLen)
-        self.platform1Stair = self.__makeStairs(origin.add(Base.Vector(
+        self.platform1StairOrigin = origin.add(Base.Vector(
                                                     self.__TotalStationLength-\
                                                     self.__ShortPlatformLength,
                                                     self.__CombinedTrackAndPlatformWidth-\
                                                     self.__PlatformStairWidth,
-                                                    -(self.__TotalStationHeight+self.__StationUnderOffset))),
+                                                    -(self.__TotalStationHeight+self.__StationUnderOffset)))
+        self.platform1Stair = self.__makeStairs(self.platform1StairOrigin,
                                        self.__PlatformStairTotalRise,
                                        self.__PlatformStairWidth,
                                        Elevator.ShaftWidth)
-        self.platform2Stair = self.__makeStairs(origin.add(Base.Vector(
+        self.platform2StairOrigin = origin.add(Base.Vector(
                                                     self.__TotalStationLength-\
                                                     self.__ShortPlatformLength,
                                                     0,
-                                                    -(self.__TotalStationHeight+self.__StationUnderOffset))),
+                                                    -(self.__TotalStationHeight+self.__StationUnderOffset)))
+        self.platform2Stair = self.__makeStairs(self.platform2StairOrigin,
                                        self.__PlatformStairTotalRise,
                                        self.__PlatformStairWidth,
                                        Elevator.ShaftWidth)
-        self.stationFloor = Part.makePlane(self.__TotalStationLength,
-                                           self.__TotalStationDepth,
-                                           self.origin.add(Base.Vector(0,0,-(self.__TotalStationHeight+self.__StationUnderOffset))))\
-                   .extrude(Base.Vector(0,0,-self.__WallWidth))
+        self.stationFloor = Part.makePlane(self.__TotalStationLength+(2*self.__MainWallWidth),
+                                           self.__TotalStationDepth+(2*self.__MainWallWidth),
+                                           self.origin.add(Base.Vector(-self.__MainWallWidth,0,-(self.__TotalStationHeight+self.__StationUnderOffset))))\
+                   .extrude(Base.Vector(0,0,-self.__MainWallWidth))
+        elevator1Origin = self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
+                                        self.__CombinedTrackAndPlatformWidth-Elevator.ShaftLength,
+                                        -(self.__TotalStationHeight+self.__StationUnderOffset)))
         self.platform1Elevator = Elevator(
             "Platform1Elevator",
-            self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
-                                        self.__CombinedTrackAndPlatformWidth-Elevator.ShaftLength,
-                                        -(self.__TotalStationHeight+self.__StationUnderOffset))),
+            elevator1Origin,
             self.__PlatformStairTotalRise)            
+        elevatorShelterOrigin = Base.Vector(elevator1Origin.x,
+                                            elevator1Origin.y+Elevator.ShaftLength,
+                                            origin.z+self.__PlatformHeight)
+        elevatorShelter = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                                         Elevator.ShaftLength,
+                                         elevatorShelterOrigin.add(
+                                            Base.Vector(
+                                                Elevator.ShaftWidth+\
+                                                self.__PlatformStairWidth,
+                                                0,
+                                                0)),
+                                         Base.Vector(1,0,0))\
+              .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
+        elevatorShelter 
+        self.elevator1Shelter = elevatorShelter.fuse(
+            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                           self.__PlatformStairWidth,
+                           elevatorShelterOrigin.add(
+                            Base.Vector(
+                                Elevator.ShaftWidth,
+                                -Elevator.ShaftLength,
+                                0)),
+                           Base.Vector(0,1,0)).extrude(Base.Vector(0,self.__GlassWallWidth)))
+        elevator2Origin = self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
+                                        0,
+                                        -(self.__TotalStationHeight+self.__StationUnderOffset)))
         self.platform2Elevator = Elevator(
             "Platform2Elevator",
-            self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
-                                        0,
-                                        -(self.__TotalStationHeight+self.__StationUnderOffset))),
+            elevator2Origin,
             self.__PlatformStairTotalRise)
+        elevatorShelterOrigin = Base.Vector(elevator2Origin.x,
+                                            elevator2Origin.y+Elevator.ShaftLength,
+                                            origin.z+self.__PlatformHeight)
+        elevatorShelter = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                                         Elevator.ShaftLength,
+                                         elevatorShelterOrigin.add(
+                                            Base.Vector(
+                                                Elevator.ShaftWidth+\
+                                                self.__PlatformStairWidth,
+                                                0,
+                                                0)),
+                                         Base.Vector(1,0,0))\
+              .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
+        self.elevator2Shelter = elevatorShelter.fuse(
+            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                           self.__PlatformStairWidth,
+                           elevatorShelterOrigin.add(
+                            Base.Vector(
+                                Elevator.ShaftWidth,
+                                0,
+                                0)),
+                           Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth)))
         platformBaseHeight = self.__PlatformHeight-Units.mm(Units.HOScale(12))
         platformBaseExtrude = Base.Vector(0,0,platformBaseHeight)
         platformBaseWidth = self.__PlatformWidth-Units.mm(Units.HOScale(12))
@@ -262,16 +317,70 @@ class UnderStation(object):
                                     self.__PlatformWidth,
                                 self.__PlatformHeight-\
                                     Units.mm(Units.HOScale(12))))
-        self.platform1 = platform.fuse(
+        platform = platform.fuse(
             Part.makePlane(self.__LongPlatformLength,
                            self.__PlatformWidth,
                            p1origin)\
                  .extrude(platformTopExtrude))
+        l1riselen = self.__TotalStairLength(self.__StairLandingRiseMax,0)
+        stairwellcutLen = platformStairLen-l1riselen
+        stairwellcut = Part.makePlane(stairwellcutLen,
+                                      self.__PlatformStairWidth,
+                                      self.platform1StairOrigin.add(Base.Vector(
+                                            l1riselen,
+                                            0,
+                                            self.__StairLandingRiseMax)))\
+                          .extrude(Base.Vector(0,0,self.__StairLandingRiseMax))
+        self.platform1 = platform.cut(stairwellcut)
+        stairShelterOrigin = Base.Vector(self.platform1StairOrigin.x+\
+                                                    l1riselen,
+                                                    self.platform1StairOrigin.y+\
+                                                        self.__PlatformStairWidth,
+                                                    origin.z+self.__PlatformHeight)
+        stairShelter = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                                      self.__PlatformStairWidth,
+                                      stairShelterOrigin,
+                                      Base.Vector(1,0,0))\
+               .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
+        stairShelter = stairShelter.fuse(
+            Part.makePlane(
+                self.__PlatformRoofHeight-self.__PlatformHeight,
+                stairwellcutLen+self.__PlatformStairWidth,
+                stairShelterOrigin.add(Base.Vector(0,-self.__PlatformStairWidth,0)),
+                Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0)))
+        self.stair1Shelter = stairShelter.fuse(
+            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                                      self.__PlatformStairWidth,
+                                      stairShelterOrigin.add(Base.Vector(stairwellcutLen+self.__PlatformStairWidth,0,0)),
+                                      Base.Vector(1,0,0))\
+               .extrude(Base.Vector(self.__GlassWallWidth,0,0)))
+        stairShelterOrigin = Base.Vector(self.platform1StairOrigin.x+\
+                                                    l1riselen,
+                                                    self.platform2StairOrigin.y+\
+                                                        self.__PlatformStairWidth,
+                                                    origin.z+self.__PlatformHeight)
+        stairShelter = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                                      self.__PlatformStairWidth,
+                                      stairShelterOrigin,
+                                      Base.Vector(1,0,0))\
+               .extrude(Base.Vector(self.__GlassWallWidth,0,0))
+        stairShelter = stairShelter.fuse(
+            Part.makePlane(
+                self.__PlatformRoofHeight-self.__PlatformHeight,
+                stairwellcutLen+self.__PlatformStairWidth,
+                stairShelterOrigin,
+                Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0)))
+        self.stair2Shelter = stairShelter.fuse(
+            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                                      self.__PlatformStairWidth,
+                                      stairShelterOrigin.add(Base.Vector(stairwellcutLen+self.__PlatformStairWidth,0,0)),
+                                      Base.Vector(1,0,0))\
+               .extrude(Base.Vector(self.__GlassWallWidth,0,0)))
         platform = Part.makePlane(self.__LongPlatformLength,
                                   platformBaseWidth,
                                   origin)\
                  .extrude(platformBaseExtrude)
-        self.platform2 = platform.fuse(
+        platform = platform.fuse(
             Part.makePlane(self.__LongPlatformLength,
                            self.__PlatformWidth,
                            origin.add(
@@ -281,6 +390,16 @@ class UnderStation(object):
                                 self.__PlatformHeight-\
                                     Units.mm(Units.HOScale(12)))))\
                  .extrude(platformTopExtrude))
+        stairwellcut = Part.makePlane(stairwellcutLen,
+                                      self.__PlatformStairWidth,
+                                      self.platform2StairOrigin.add(Base.Vector(
+                                            l1riselen,
+                                            0,
+                                            self.__StairLandingRiseMax)))\
+                          .extrude(Base.Vector(0,0,self.__StairLandingRiseMax))
+        self.platform2 = platform.cut(stairwellcut)
+        #debug("*** UnderStation.__init__(): platform stairwell bottom is %d",self.platform2StairOrigin.z+self.__StairLandingRiseMax)
+        
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -311,6 +430,26 @@ class UnderStation(object):
         obj.Shape = self.platform2
         obj.Label=self.name+"_Platform2"
         obj.ViewObject.ShapeColor=self.__StairsColor
+        obj = doc.addObject("Part::Feature",self.name+"_Platform1StairShelter")
+        obj.Shape = self.stair1Shelter
+        obj.Label=self.name+"_Platform1StairShelter"
+        obj.ViewObject.ShapeColor=(1.0,1.0,1.0)
+        obj.ViewObject.Transparency=90
+        obj = doc.addObject("Part::Feature",self.name+"_Platform2StairShelter")
+        obj.Shape = self.stair2Shelter
+        obj.Label=self.name+"_Platform2StairShelter"
+        obj.ViewObject.ShapeColor=(1.0,1.0,1.0)
+        obj.ViewObject.Transparency=90
+        obj = doc.addObject("Part::Feature",self.name+"_Platform1ElevatorShelter")
+        obj.Shape = self.elevator1Shelter
+        obj.Label=self.name+"_Platform1ElevatorShelter"
+        obj.ViewObject.ShapeColor=(1.0,1.0,1.0)
+        obj.ViewObject.Transparency=90
+        obj = doc.addObject("Part::Feature",self.name+"_Platform2ElevatorShelter")
+        obj.Shape = self.elevator2Shelter
+        obj.Label=self.name+"_Platform2ElevatorShelter"
+        obj.ViewObject.ShapeColor=(1.0,1.0,1.0)
+        obj.ViewObject.Transparency=90
 
 if __name__ == '__main__':
     if "UnderStation" in App.listDocuments().keys():
@@ -319,6 +458,6 @@ if __name__ == '__main__':
     doc = App.activeDocument()
     station = UnderStation("Station",Base.Vector(0,0,0))
     station.show(doc)
-    Gui.activeDocument().activeView().viewRight()
+    Gui.activeDocument().activeView().viewFront()
     Gui.SendMsgToActiveView("ViewFit")
     
