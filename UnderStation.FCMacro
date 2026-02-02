@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260201.2200>
+#  Last Modified : <260201.2256>
 #
 #  Description	
 #
@@ -107,6 +107,9 @@ class UnderStation(object):
     __StairRiser         = Units.mm(Units.HOScale(5.5))
     __StairTread         = Units.mm(Units.HOScale(11))
     __CurbHeight         = Units.mm(Units.HOScale(6))
+    __PostOffset         = Units.mm(Units.HOScale(Units.inches(5)))
+    __PostSpacing        = Units.mm(Units.HOScale(Units.inches(10)))
+    __PostDiameter       = Units.mm(Units.HOScale(Units.inches(2)))
     @property
     def __StairRiseRatio(self):
         return self.__StairTread/self.__StairRiser
@@ -258,7 +261,7 @@ class UnderStation(object):
                                                 0)),
                                          Base.Vector(1,0,0))\
               .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
-        elevatorShelter 
+        
         self.elevator1Shelter = elevatorShelter.fuse(
             Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
                            self.__PlatformStairWidth,
@@ -268,6 +271,7 @@ class UnderStation(object):
                                 -Elevator.ShaftLength,
                                 0)),
                            Base.Vector(0,1,0)).extrude(Base.Vector(0,self.__GlassWallWidth)))
+        postSkip1 = (elevator1Origin.x,elevator1Origin.x+Elevator.ShaftWidth+self.__PlatformStairWidth)
         elevator2Origin = self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
                                         0,
                                         -(self.__TotalStationHeight+self.__StationUnderOffset)))
@@ -355,6 +359,8 @@ class UnderStation(object):
                                       stairShelterOrigin.add(Base.Vector(stairwellcutLen+self.__PlatformStairWidth,0,0)),
                                       Base.Vector(1,0,0))\
                .extrude(Base.Vector(self.__GlassWallWidth,0,0)))
+        postSkip2 = (stairShelterOrigin.x-self.__GlassWallWidth,
+                      stairShelterOrigin.x+stairwellcutLen+self.__PlatformStairWidth+self.__GlassWallWidth)
         stairShelterOrigin = Base.Vector(self.platform2StairOrigin.x+\
                                                     l1riselen,
                                                     self.platform2StairOrigin.y+\
@@ -413,6 +419,27 @@ class UnderStation(object):
                                 self.__PlatformWidth,
                                 p2RoofOrigin).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
         self.platform2 = self.platform2.fuse(p2roof).cut(self.platform2Elevator.shaft)
+        postEnd = p1origin.x+self.__LongPlatformLength
+        postX = p1origin.x+self.__PostOffset
+        postLength = p1RoofOrigin.z-p1origin.z-Units.mm(Units.HOScale(12))
+        while postX < postEnd:
+            #debug("*** postX = %f, postEnd is %f",postX,postEnd)
+            if postX+self.__PostDiameter/2 > postSkip1[0] and \
+               postX-self.__PostDiameter/2 < postSkip1[1]:
+                postX = postX + self.__PostSpacing
+                continue
+            if postX+self.__PostDiameter/2 > postSkip2[0] and \
+               postX-self.__PostDiameter/2 < postSkip2[1]:
+                postX = postX + self.__PostSpacing
+                continue
+            post1Orig = Base.Vector(postX,p1origin.y+self.__PlatformWidth/2,origin.z+self.__PlatformHeight)
+            post1 = Part.makeCylinder(self.__PostDiameter/2,postLength,post1Orig)
+            self.platform1 = self.platform1.fuse(post1)
+            post2Orig = Base.Vector(postX,origin.y+self.__PlatformWidth/2,origin.z+self.__PlatformHeight)
+            post2 = Part.makeCylinder(self.__PostDiameter/2,postLength,post2Orig)
+            self.platform2 = self.platform2.fuse(post2)
+            postX = postX + self.__PostSpacing
+            
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
