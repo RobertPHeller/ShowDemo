@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260201.2256>
+#  Last Modified : <260202.0857>
 #
 #  Description	
 #
@@ -420,17 +420,16 @@ class UnderStation(object):
                                 p2RoofOrigin).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
         self.platform2 = self.platform2.fuse(p2roof).cut(self.platform2Elevator.shaft)
         postEnd = p1origin.x+self.__LongPlatformLength
-        postX = p1origin.x+self.__PostOffset
+        postX = p1origin.x+self.__PostOffset-self.__PostSpacing
         postLength = p1RoofOrigin.z-p1origin.z-Units.mm(Units.HOScale(12))
-        while postX < postEnd:
+        while postX < postEnd-self.__PostSpacing:
+            postX = postX + self.__PostSpacing
             #debug("*** postX = %f, postEnd is %f",postX,postEnd)
             if postX+self.__PostDiameter/2 > postSkip1[0] and \
                postX-self.__PostDiameter/2 < postSkip1[1]:
-                postX = postX + self.__PostSpacing
                 continue
             if postX+self.__PostDiameter/2 > postSkip2[0] and \
                postX-self.__PostDiameter/2 < postSkip2[1]:
-                postX = postX + self.__PostSpacing
                 continue
             post1Orig = Base.Vector(postX,p1origin.y+self.__PlatformWidth/2,origin.z+self.__PlatformHeight)
             post1 = Part.makeCylinder(self.__PostDiameter/2,postLength,post1Orig)
@@ -438,7 +437,6 @@ class UnderStation(object):
             post2Orig = Base.Vector(postX,origin.y+self.__PlatformWidth/2,origin.z+self.__PlatformHeight)
             post2 = Part.makeCylinder(self.__PostDiameter/2,postLength,post2Orig)
             self.platform2 = self.platform2.fuse(post2)
-            postX = postX + self.__PostSpacing
             
     def show(self,doc=None):
         if doc==None:
