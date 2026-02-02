@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260201.2056>
+#  Last Modified : <260201.2200>
 #
 #  Description	
 #
@@ -345,8 +345,9 @@ class UnderStation(object):
         stairShelter = stairShelter.fuse(
             Part.makePlane(
                 self.__PlatformRoofHeight-self.__PlatformHeight,
-                stairwellcutLen+self.__PlatformStairWidth,
-                stairShelterOrigin.add(Base.Vector(0,-self.__PlatformStairWidth,0)),
+                stairwellcutLen+self.__PlatformStairWidth+(2*self.__GlassWallWidth),
+                stairShelterOrigin.add(Base.Vector(-self.__GlassWallWidth,
+                                                   -self.__PlatformStairWidth,0)),
                 Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0)))
         self.stair1Shelter = stairShelter.fuse(
             Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
@@ -354,7 +355,7 @@ class UnderStation(object):
                                       stairShelterOrigin.add(Base.Vector(stairwellcutLen+self.__PlatformStairWidth,0,0)),
                                       Base.Vector(1,0,0))\
                .extrude(Base.Vector(self.__GlassWallWidth,0,0)))
-        stairShelterOrigin = Base.Vector(self.platform1StairOrigin.x+\
+        stairShelterOrigin = Base.Vector(self.platform2StairOrigin.x+\
                                                     l1riselen,
                                                     self.platform2StairOrigin.y+\
                                                         self.__PlatformStairWidth,
@@ -363,12 +364,13 @@ class UnderStation(object):
                                       self.__PlatformStairWidth,
                                       stairShelterOrigin,
                                       Base.Vector(1,0,0))\
-               .extrude(Base.Vector(self.__GlassWallWidth,0,0))
+               .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
         stairShelter = stairShelter.fuse(
             Part.makePlane(
                 self.__PlatformRoofHeight-self.__PlatformHeight,
-                stairwellcutLen+self.__PlatformStairWidth,
-                stairShelterOrigin,
+                stairwellcutLen+self.__PlatformStairWidth+(2*self.__GlassWallWidth),
+                stairShelterOrigin.add(Base.Vector(-self.__GlassWallWidth,
+                                                   self.__GlassWallWidth,0)),
                 Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0)))
         self.stair2Shelter = stairShelter.fuse(
             Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
