@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260201.1647>
+#  Last Modified : <260201.2056>
 #
 #  Description	
 #
@@ -90,7 +90,7 @@ class UnderStation(object):
     __CombinedTrackAndPlatformWidth = Units.mm(8.1)
     __MainWallWidth = Units.HOScale(Units.mm(6))
     __GlassWallWidth  = Units.HOScale(Units.mm(3))
-    
+    __PlatformRoofThickness = Units.HOScale(Units.mm(6))
     # Total platform edge-to-edge + 
     #                Wall + 
     #                Street elevator shaft + 
@@ -399,7 +399,18 @@ class UnderStation(object):
                           .extrude(Base.Vector(0,0,self.__StairLandingRiseMax))
         self.platform2 = platform.cut(stairwellcut)
         #debug("*** UnderStation.__init__(): platform stairwell bottom is %d",self.platform2StairOrigin.z+self.__StairLandingRiseMax)
-        
+        p1RoofOrigin = Base.Vector(p1origin.x,p1origin.y,
+                                   origin.z+self.__PlatformRoofHeight)
+        p1roof = Part.makePlane(self.__LongPlatformLength,
+                                self.__PlatformWidth,
+                                p1RoofOrigin).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+        self.platform1 = self.platform1.fuse(p1roof).cut(self.platform1Elevator.shaft)
+        p2RoofOrigin = Base.Vector(origin.x,origin.y,
+                                   origin.z+self.__PlatformRoofHeight)
+        p2roof = Part.makePlane(self.__LongPlatformLength,
+                                self.__PlatformWidth,
+                                p2RoofOrigin).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+        self.platform2 = self.platform2.fuse(p2roof).cut(self.platform2Elevator.shaft)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
