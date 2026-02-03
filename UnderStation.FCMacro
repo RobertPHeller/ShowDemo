@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260203.1159>
+#  Last Modified : <260203.1235>
 #
 #  Description	
 #
@@ -499,7 +499,21 @@ class UnderStation(object):
                      .extrude(Base.Vector(0,0,self.__MainWallWidth))
         ceiling = ceiling.cut(self.platform1Elevator.shaft)
         ceiling = ceiling.cut(self.platform2Elevator.shaft)
-        self.walls = wall.fuse(ceiling)
+        stairwaywall1 = Part.makePlane(self.__TotalStationHeight+\
+                                        self.__StationUnderOffset,
+                                       platformStairLen,
+                                       self.platform1StairOrigin.add(
+                                        Base.Vector(0,0,0)),
+                                       Base.Vector(0,1,0))\
+                .extrude(Base.Vector(0,-self.__MainWallWidth))
+        stairwaywall2 = Part.makePlane(self.__TotalStationHeight+\
+                                        self.__StationUnderOffset,
+                                       platformStairLen,
+                                       self.platform2StairOrigin.add(
+                                        Base.Vector(0,self.__PlatformStairWidth,0)),
+                                       Base.Vector(0,1,0))\
+                .extrude(Base.Vector(0,self.__MainWallWidth))
+        self.walls = wall.fuse(ceiling).fuse(stairwaywall1).fuse(stairwaywall2)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
