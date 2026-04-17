@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:58:42
-#  Last Modified : <260128.1959>
+#  Last Modified : <260209.1400>
 #
 #  Description	
 #
@@ -40,6 +40,7 @@
 #
 #*****************************************************************************
 
+import math
 
 def HOScale(dim):
     return dim*(1/87)
@@ -47,3 +48,5 @@ def mm(inches):
     return inches*25.4
 def inches(feet):
     return feet*12
+def radians(degrees):
+    return (degrees/180)*math.pi
