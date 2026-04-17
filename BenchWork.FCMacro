@@ -1,0 +1,275 @@
+#*****************************************************************************
+#
+#  System        : 
+#  Module        : 
+#  Object Name   : $RCSfile$
+#  Revision      : $Revision$
+#  Date          : $Date$
+#  Author        : $Author$
+#  Created By    : Robert Heller
+#  Created       : 2026-04-17 09:09:12
+#  Last Modified : <260417.1217>
+#
+#  Description	
+#
+#  Notes
+#
+#  History
+#	
+#*****************************************************************************
+#
+#    Copyright (C) 2026  Robert Heller D/B/A Deepwoods Software
+#			51 Locke Hill Road
+#			Wendell, MA 01379-9728
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+# 
+#
+#*****************************************************************************
+
+
+import FreeCAD as App
+import Part, TechDraw, Mesh
+from FreeCAD import Base
+
+import os
+import sys
+sys.path.append(os.path.dirname(__file__))
+import csv
+import math
+import Units
+from debug import debug
+
+import csv
+
+class WoodBOM(object):
+    __woodBOM = dict()
+    @classmethod
+    def AddPiece(cls,width,height,length):
+        key = (width,height,length)
+        if key in cls.__woodBOM:
+            cls.__woodBOM[key] += 1
+        else:
+            cls.__woodBOM[key] = 1
+    @staticmethod
+    def _normPartSizeMM(t):
+        return ("%.3fx%.3fx%.3f" % t)
+    @staticmethod
+    def _inch(mm):
+        return mm / 25.4
+    @staticmethod
+    def _normPartSizeIN(t):
+        X, Y, Z = t
+        return ("%.4fx%.4fx%.4f" % (WoodBOM._inch(X), WoodBOM._inch(Y), WoodBOM._inch(Z)))
+    _units = 'in'
+    @classmethod
+    def SetUnits(cls,units):
+        if units == 'in' or units == 'mm':
+            cls._units = units
+        else:
+            raise RuntimeError("Unsupport units!")
+    @classmethod
+    def GetUnits(cls):
+        return cls._units
+    @classmethod
+    def _normPartSize(cls,t):
+        if cls._units == 'in':
+            return WoodBOM._normPartSizeIN(t)
+        elif cls._units == 'mm':
+            return WoodBOM._normPartSizeMM(t)
+        else:
+            raise RuntimeError("Unsupport units!")
+    @classmethod
+    def ListCuts(cls,filename):
+        keys = list(cls.__woodBOM.keys())
+        keys.sort()
+        f = open(filename,"w")
+        w = csv.writer(f)
+        w.writerow([("Size (%s)" % cls._units),"Count"])
+        for key in keys:
+            w.writerow([cls._normPartSize(key),cls.__woodBOM[key]])
+        f.close()
+    def __init__(self):
+        raise RuntimeError("No Instances allowed for WoodBOM!")
+        
+class PineBoard(object):
+    __thick = Units.mm(3/4)
+    def __init__(self):
+        raise RuntimeError("No Instances allowed for PineBoard!")
+    @classmethod
+    def BoardThickness(cls):
+        return cls.__thick
+    @classmethod
+    def ZXBoard(cls,origin,width,length):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        board = Part.makePlane(width,length,origin,Base.Vector(0,1,0)).extrude(Base.Vector(0,cls.__thick,0))
+        bb = board.BoundBox
+        WoodBOM.AddPiece(bb.XLength,bb.ZLength,bb.YLength)
+        return board
+    @classmethod
+    def YXBoard(cls,origin,width,length):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        board = Part.makePlane(width,length,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,cls.__thick))
+        bb = board.BoundBox
+        WoodBOM.AddPiece(bb.YLength,bb.XLength,bb.ZLength)
+        return board
+    @classmethod
+    def ZYBoard(cls,origin,width,length):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        board = Part.makePlane(width,length,origin,Base.Vector(1,0,0)).extrude(Base.Vector(cls.__thick,0,0))
+        bb = board.BoundBox
+        WoodBOM.AddPiece(bb.YLength,bb.ZLength,bb.XLength)
+        return board
+    @classmethod
+    def XYBoard(cls,origin,width,length):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        board = Part.makePlane(width,length,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,cls.__thick))
+        bb = board.BoundBox
+        WoodBOM.AddPiece(bb.YLength,bb.XLength,bb.ZLength)
+        return board
+    @classmethod
+    def ZBeam(cls,origin,length):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        beam = Part.makePlane(cls.__thick,cls.__thick,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,length))
+        bb = beam.BoundBox
+        WoodBOM.AddPiece(bb.YLength,bb.XLength,bb.ZLength)
+        return board
+    @classmethod
+    def XBeam(cls,origin,length):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        beam = Part.makePlane(cls.__thick,cls.__thick,origin,Base.Vector(1,0,0)).extrude(Base.Vector(length,0,0))
+        bb = beam.BoundBox
+        WoodBOM.AddPiece(bb.YLength,bb.ZLength,bb.XLength)
+        return board
+    @classmethod
+    def YBeam(cls,origin,length):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        beam = Part.makePlane(cls.__thick,cls.__thick,origin,Base.Vector(0,1,0)).extrude(Base.Vector(0,length,0))
+        bb = beam.BoundBox
+        WoodBOM.AddPiece(bb.XLength,bb.ZLength,bb.YLength)
+        return board
+         
+
+class PlywoodBOM(object):
+    __plywoodBOM = dict()
+    @classmethod
+    def AddPiece(cls,width,length,thick):
+        key = (width,length,thick)
+        if key in cls.__plywoodBOM:
+            cls.__plywoodBOM[key] += 1
+        else:
+            cls.__plywoodBOM[key] = 1
+    @staticmethod
+    def _normPartSizeMM(t):
+        return ("%.3fx%.3fx%.3f" % t)
+    @staticmethod      
+    def _inch(mm):  
+        return mm / 25.4  
+    @staticmethod
+    def _normPartSizeIN(t):
+        X, Y, Z = t 
+        return ("%.4fx%.4fx%.4f" % (PlywoodBOM._inch(X), PlywoodBOM._inch(Y), PlywoodBOM._inch(Z))) 
+    _units = 'in' 
+    @classmethod     
+    def SetUnits(cls,units):   
+        if units == 'in' or units == 'mm':
+            cls._units = units         
+        else: 
+            raise RuntimeError("Unsupport units!")      
+    @classmethod       
+    def GetUnits(cls): 
+        return cls._units  
+    @classmethod   
+    def _normPartSize(cls,t): 
+        if cls._units == 'in':
+            return PlywoodBOM._normPartSizeIN(t)
+        elif cls._units == 'mm':
+            return PlywoodBOM._normPartSizeMM(t)
+        else:
+            raise RuntimeError("Unsupport units!")
+    @classmethod  
+    def ListCuts(cls,filename): 
+        keys = list(cls.__plywoodBOM.keys())
+        keys.sort()   
+        f = open(filename,"w") 
+        w = csv.writer(f)  
+        w.writerow([("Size (%s)" % cls._units),"Count"]) 
+        for key in keys:  
+            w.writerow([cls._normPartSize(key),cls.__plywoodBOM[key]])
+        f.close()        
+    def __init__(self):
+        raise RuntimeError("No Instances allowed for PlywoodBOM")
+
+class Plywood(object):
+    def __init__(self):
+        raise RuntimeError("No Instances allowed for Plywood")
+    __AB3_8Thick = Units.mm(3/8)
+    __Birch1_4Thick = Units.mm(1/4)
+    @classmethod
+    def XYSheet(cls,origin,width,length,plytype="AB"):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        thick = 0;
+        if plytype == "AB":
+            thick = cls.__AB3_8Thick
+        elif plytype = "Birch":
+            thick = cls.__Birch1_4Thick
+        else:
+            raise RuntimeError("Unsupport plywood type")
+        sheet = Part.makePlane(width,length,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,thick))
+        bb = sheet.BoundBox
+        PlywoodBOM.AddPiece(bb.XLength,bb.YLength,bb.ZLength)
+        return sheet
+    @classmethod
+    def XZSheet(cls,origin,width,length,plytype="AB"):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        thick = 0;
+        if plytype == "AB":
+            thick = cls.__AB3_8Thick
+        elif plytype = "Birch":
+            thick = cls.__Birch1_4Thick
+        else:
+            raise RuntimeError("Unsupport plywood type")
+        sheet = Part.makePlane(width,length,origin,Base.Vector(0,1,0)).extrude(Base.Vector(0,thick,0))
+        bb = sheet.BoundBox
+        PlywoodBOM.AddPiece(bb.XLength,bb.ZLength,bb.YLength)
+        return sheet
+    @classmethod
+    def YZSheet(cls,origin,width,length,plytype="AB"):
+        if not isinstance(origin,Base.Vector):
+            raise RuntimeError("origin is not a Vector!")
+        thick = 0;
+        if plytype == "AB":
+            thick = cls.__AB3_8Thick
+        elif plytype = "Birch":
+            thick = cls.__Birch1_4Thick
+        else:
+            raise RuntimeError("Unsupport plywood type")
+        sheet = Part.makePlane(width,length,origin,Base.Vector(1,0,0)).extrude(Base.Vector(thick,0,0))
+        bb = sheet.BoundBox
+        PlywoodBOM.AddPiece(bb.ZLength,bb.YLength,bb.XLength)
+        return sheet
+    
+
+if __name__ == '__main__':
