@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-17 09:09:12
-#  Last Modified : <260418.1206>
+#  Last Modified : <260418.1642>
 #
 #  Description	
 #
@@ -58,25 +58,25 @@ import csv
 def NormalizeMM(x):
     return round(x,3)
 
-class PineBoard(object):
-    _BOM = dict()
+class BOMHelper(object):
+    __BOM = dict()
     @classmethod
-    def AddPiece(cls,width,height):
-        key = (NormalizeMM(width),NormalizeMM(height))
-        if key in cls._BOM:
-            cls._BOM[key] += 1
+    def AddPiece(cls,width,height,kind):
+        key = (NormalizeMM(width),NormalizeMM(height),kind)
+        if key in cls.__BOM:
+            cls.__BOM[key] += 1
         else:
-            cls._BOM[key] = 1
-    @staticmethod
-    def _normPartSizeMM(t):
-        return ("%.3fx%.3f of Pine board (3/4)" % t)
+            cls.__BOM[key] = 1
+    @classmethod
+    def _normPartSizeMM(cls,t):
+        return ("%.3fx%.3f" % t)
     @staticmethod
     def _inch(mm):
         return mm / 25.4
-    @staticmethod
-    def _normPartSizeIN(t):
+    @classmethod
+    def _normPartSizeIN(cls,t):
         X, Y = t
-        return ("%.4fx%.4f of Pine board (3/4)" % (PineBoard._inch(X), PineBoard._inch(Y)))
+        return ("%.4fx%.4f" % (cls._inch(X), cls._inch(Y)))
     _units = 'in'
     @classmethod
     def SetUnits(cls,units):
@@ -90,21 +90,25 @@ class PineBoard(object):
     @classmethod
     def _normPartSize(cls,t):
         if cls._units == 'in':
-            return PineBoard._normPartSizeIN(t)
+            return cls._normPartSizeIN(t)
         elif cls._units == 'mm':
-            return PineBoard._normPartSizeMM(t)
+            return BOMHelper._normPartSizeMM(t)
         else:
             raise RuntimeError("Unsupport units!")
     @classmethod
     def ListCuts(cls,filename):
-        keys = list(cls._BOM.keys())
+        keys = list(cls.__BOM.keys())
         keys.sort()
         f = open(filename,"w")
         w = csv.writer(f)
         w.writerow([("Size (%s)" % cls._units),"Count"])
         for key in keys:
-            w.writerow([cls._normPartSize(key),cls._BOM[key]])
+            X, Y, kind = key
+            w.writerow([cls._normPartSize((X,Y)),kind,cls.__BOM[key]])
         f.close()
+    
+
+class PineBoard(BOMHelper):
     __thick = Units.mm(3/4)
     def __init__(self):
         raise RuntimeError("No Instances allowed for PineBoard!")
@@ -121,7 +125,7 @@ class PineBoard(object):
             raise RuntimeError("origin is not a Vector!")
         board = Part.makePlane(width,length,origin,Base.Vector(0,1,0)).extrude(Base.Vector(0,cls.__thick,0))
         bb = board.BoundBox
-        PineBoard.AddPiece(bb.XLength,bb.ZLength)
+        cls.AddPiece(bb.XLength,bb.ZLength,"Pine board (3/4in)")
         return board
     @classmethod
     def YXBoard(cls,origin,width,length):
@@ -129,7 +133,7 @@ class PineBoard(object):
             raise RuntimeError("origin is not a Vector!")
         board = Part.makePlane(width,length,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,cls.__thick))
         bb = board.BoundBox
-        PineBoard.AddPiece(bb.YLength,bb.XLength)
+        cls.AddPiece(bb.YLength,bb.XLength,"Pine board (3/4in)")
         return board
     @classmethod
     def ZYBoard(cls,origin,width,length):
@@ -139,7 +143,7 @@ class PineBoard(object):
                                Base.Vector(1,0,0)) \
                   .extrude(Base.Vector(cls.__thick,0,0))
         bb = board.BoundBox
-        PineBoard.AddPiece(bb.YLength,bb.ZLength)
+        cls.AddPiece(bb.YLength,bb.ZLength,"Pine board (3/4in)")
         return board
     @classmethod
     def XYBoard(cls,origin,width,length):
@@ -147,7 +151,7 @@ class PineBoard(object):
             raise RuntimeError("origin is not a Vector!")
         board = Part.makePlane(width,length,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,cls.__thick))
         bb = board.BoundBox
-        PineBoard.AddPiece(bb.YLength,bb.XLength)
+        cls.AddPiece(bb.YLength,bb.XLength,"Pine board (3/4in)")
         return board
     @classmethod
     def ZBeam(cls,origin,length):
@@ -155,7 +159,7 @@ class PineBoard(object):
             raise RuntimeError("origin is not a Vector!")
         beam = Part.makePlane(cls.__thick,cls.__thick,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,length))
         bb = beam.BoundBox
-        PineBoard.AddPiece(bb.YLength,bb.ZLength)
+        cls.AddPiece(bb.YLength,bb.ZLength,"Pine board (3/4in)")
         return beam
     @classmethod
     def XBeam(cls,origin,length):
@@ -163,7 +167,7 @@ class PineBoard(object):
             raise RuntimeError("origin is not a Vector!")
         beam = Part.makePlane(cls.__thick,cls.__thick,origin,Base.Vector(1,0,0)).extrude(Base.Vector(length,0,0))
         bb = beam.BoundBox
-        PineBoard.AddPiece(bb.YLength,bb.ZLength)
+        cls.AddPiece(bb.YLength,bb.ZLength,"Pine board (3/4in)")
         return beam
     @classmethod
     def YBeam(cls,origin,length):
@@ -171,59 +175,13 @@ class PineBoard(object):
             raise RuntimeError("origin is not a Vector!")
         beam = Part.makePlane(cls.__thick,cls.__thick,origin,Base.Vector(0,1,0)).extrude(Base.Vector(0,length,0))
         bb = beam.BoundBox
-        PineBoard.AddPiece(bb.XLength,bb.ZLength)
+        cls.AddPiece(bb.XLength,bb.ZLength,"Pine board (3/4in)")
         return beam
          
 
-class Plywood(object):
-    __BOM = dict()
-    @classmethod
-    def AddPiece(cls,width,length,kind):
-        key = (NormalizeMM(width),NormalizeMM(length),kind)
-        if key in cls.__BOM:
-            cls.__BOM[key] += 1
-        else:
-            cls.__BOM[key] = 1
-    @staticmethod
-    def _normPartSizeMM(t):
-        return ("%.3fx%.3f of %s" % t)
-    @staticmethod      
-    def _inch(mm):  
-        return mm / 25.4  
-    @staticmethod
-    def _normPartSizeIN(t):
-        X, Y, kind = t 
-        return ("%.4fx%.4f of %s" % (Plywood._inch(X), Plywood._inch(Y), kind)) 
-    _units = 'in' 
-    @classmethod     
-    def SetUnits(cls,units):   
-        if units == 'in' or units == 'mm':
-            cls._units = units         
-        else: 
-            raise RuntimeError("Unsupport units!")      
-    @classmethod       
-    def GetUnits(cls): 
-        return cls._units  
-    @classmethod   
-    def _normPartSize(cls,t): 
-        if cls._units == 'in':
-            return Plywood._normPartSizeIN(t)
-        elif cls._units == 'mm':
-            return Plywood._normPartSizeMM(t)
-        else:
-            raise RuntimeError("Unsupport units!")
-    @classmethod  
-    def ListCuts(cls,filename): 
-        keys = list(cls.__BOM.keys())
-        keys.sort()   
-        f = open(filename,"w") 
-        w = csv.writer(f)  
-        w.writerow([("Size (%s)" % cls._units),"Count"]) 
-        for key in keys:  
-            w.writerow([cls._normPartSize(key),cls.__BOM[key]])
-        f.close()        
+class Sheet(BOMHelper):
     def __init__(self):
-        raise RuntimeError("No Instances allowed for Plywood")
+        raise RuntimeError("No Instances allowed for Sheet")
     __AB3_8Thick = Units.mm(3/8)
     @classmethod
     def ABThick(cls):
@@ -232,10 +190,14 @@ class Plywood(object):
     @classmethod
     def BirchThick(cls):
         return cls.__Birch1_4Thick
-    __Masonite1_8hick = Units.mm(1/8)
+    __Masonite1_8Thick = Units.mm(1/8)
     @classmethod
     def MasoniteThick(cls):
-        return cls.__Masonite1_8hick
+        return cls.__Masonite1_8Thick
+    __Lexan1_8Thick = Units.mm(1/8)
+    @classmethod
+    def LexanThick(cls):
+        return cls.__Lexan1_8Thick
     __Color = (1.0,1.0,0.0)
     __BirchColor = (1.0,1.0,1.0)
     __MasoniteColor = (139.0/255.0,  35.0/255.0,  35.0/255.0) 
@@ -249,75 +211,153 @@ class Plywood(object):
     def MasoniteColor(cls):
         return cls.__MasoniteColor
     @classmethod
-    def XYSheet(cls,origin,width,length,plytype="AB"):
+    def XYSheet(cls,origin,width,length,sheettype="AB"):
         if not isinstance(origin,Base.Vector):
             raise RuntimeError("origin is not a Vector!")
         thick = None
         kind = None
-        if plytype == "AB":
+        if sheettype == "AB":
             thick = cls.__AB3_8Thick
-            kind = "3/8 AB"
-        elif plytype == "Birch":
+            kind = "3/8 AB Plywood"
+        elif sheettype == "Birch":
             thick = cls.__Birch1_4Thick
-            kind = "1/4 Birch"
-        elif plytype == "Masonite":
-            thick = cls.__Masonite1_8hick
+            kind = "1/4 Birch Plywood"
+        elif sheettype == "Masonite":
+            thick = cls.__Masonite1_8Thick
             kind = "1/8 Masonite"
+        elif sheettype == "Lexan":
+            thick = cls.__Lexan1_8Thick
+            kind = "1/8 Lexan"
         else:
             raise RuntimeError("Unsupport plywood type")
         sheet = Part.makePlane(width,length,origin,Base.Vector(0,0,1)).extrude(Base.Vector(0,0,thick))
         bb = sheet.BoundBox
-        Plywood.AddPiece(bb.XLength,bb.YLength,kind)
+        cls.AddPiece(bb.XLength,bb.YLength,kind)
         return sheet
     @classmethod
-    def XZSheet(cls,origin,width,length,plytype="AB"):
+    def XZSheet(cls,origin,width,length,sheettype="AB"):
         if not isinstance(origin,Base.Vector):
             raise RuntimeError("origin is not a Vector!")
         thick = None
         kind = None
-        if plytype == "AB":
+        if sheettype == "AB":
             thick = cls.__AB3_8Thick
-            kind = "3/8 AB"
-        elif plytype == "Birch":
+            kind = "3/8 AB Plywood"
+        elif sheettype == "Birch":
             thick = cls.__Birch1_4Thick
-            kind = "1/4 Birch"
-        elif plytype == "Masonite":
-            thick = cls.__Masonite1_8hick
+            kind = "1/4 Birch Plywood"
+        elif sheettype == "Masonite":
+            thick = cls.__Masonite1_8Thick
             kind = "1/8 Masonite"
+        elif sheettype == "Lexan":
+            thick = cls.__Lexan1_8Thick
+            kind = "1/8 Lexan"
         else:
             raise RuntimeError("Unsupport plywood type")
         sheet = Part.makePlane(width,length,origin,Base.Vector(0,1,0)).extrude(Base.Vector(0,thick,0))
         bb = sheet.BoundBox
-        Plywood.AddPiece(bb.XLength,bb.ZLength,kind)
+        cls.AddPiece(bb.XLength,bb.ZLength,kind)
         return sheet
     @classmethod
-    def YZSheet(cls,origin,width,length,plytype="AB"):
+    def YZSheet(cls,origin,width,length,sheettype="AB"):
         if not isinstance(origin,Base.Vector):
             raise RuntimeError("origin is not a Vector!")
         thick = None
         kind = None
-        if plytype == "AB":
+        if sheettype == "AB":
             thick = cls.__AB3_8Thick
-            kind = "3/8 AB"
-        elif plytype == "Birch":
+            kind = "3/8 AB Plywood"
+        elif sheettype == "Birch":
             thick = cls.__Birch1_4Thick
-            kind = "1/4 Birch"
-        elif plytype == "Masonite":
-            thick = cls.__Masonite1_8hick
+            kind = "1/4 Birch Plywood"
+        elif sheettype == "Masonite":
+            thick = cls.__Masonite1_8Thick
             kind = "1/8 Masonite"
+        elif sheettype == "Lexan":
+            thick = cls.__Lexan1_8Thick
+            kind = "1/8 Lexan"
         else:
             raise RuntimeError("Unsupport plywood type")
         sheet = Part.makePlane(width,length,origin.add(Base.Vector(0,length,0)),Base.Vector(1,0,0)).extrude(Base.Vector(thick,0,0))
         bb = sheet.BoundBox
-        Plywood.AddPiece(bb.ZLength,bb.YLength,kind)
+        cls.AddPiece(bb.ZLength,bb.YLength,kind)
         return sheet
     
+
 class BaseUnit(object):
     __Length = Units.mm(Units.inches(3))
     __Depth  = Units.mm(12)
     __TotalHeight = Units.mm(12)
     __BaseSupportHeight = Units.mm(5.5)
     __BaseSupportOffsets = [ Units.mm(3/8), Units.mm(11.5), Units.mm(23.5), Units.mm((Units.inches(3)-(3/8))-(3/4)) ]
+    __WireHoleYCenters = [ Units.mm(3), Units.mm(6), Units.mm(9) ]
+    __WireHoleZCenter  = Units.mm(5.5) / 2.0
+    __WireHoleDiameter = Units.mm(2)
+    __BoltHoleYCenters = [ Units.mm(1.5), Units.mm(10.5) ]
+    __BoltHoleZCenters = [ Units.mm(1.5), Units.mm(4) ]
+    __BoltHoleDiameter = Units.mm(1/4)
+    __TunnelY1         = Units.mm(2.25)
+    __TunnelY2         = Units.mm(5.75)
+    __TunnelZ0         = Units.mm(5.5)+Sheet.BirchThick()
+    __TunnelZTop       = Units.mm(5.5)+Sheet.BirchThick()+Units.mm(3)
+    __TunnelTopRadius  = Units.mm(1/2)
+    def MakeTunnelCut(self,board):
+        bb = board.BoundBox
+        X = bb.XMin
+        relX = X-self.origin.x
+        XDepth = bb.XLength
+        owidth = self.__TunnelY2-self.__TunnelY1
+        oheight = self.__TunnelZTop-self.__TunnelZ0
+        openorig = self.origin.add(Base.Vector(relX,self.__TunnelY1+owidth,
+                                               self.__TunnelZ0))
+        opening = Part.makePlane(oheight,owidth,
+                                 openorig,
+                                 Base.Vector(1,0,0)).extrude(Base.Vector(XDepth,0,0))
+        r1orig = openorig.add(Base.Vector(0,self.__TunnelTopRadius,
+                                          oheight-self.__TunnelTopRadius))
+        temp = Part.makePlane(self.__TunnelTopRadius*2,
+                              self.__TunnelTopRadius*2,
+                              r1orig,Base.Vector(1,0,0)).extrude(Base.Vector(XDepth))
+        r1 = Part.makeCylinder(self.__TunnelTopRadius,XDepth,
+                               r1orig.add(Base.Vector(0,-self.__TunnelTopRadius*2,0)),
+                               Base.Vector(1,0,0))
+        opening = opening.cut(temp.cut(r1))
+        r2orig = openorig.add(Base.Vector(0,-owidth+self.__TunnelTopRadius,
+                                          oheight-self.__TunnelTopRadius))
+        temp = Part.makePlane(self.__TunnelTopRadius*2,
+                              self.__TunnelTopRadius*2,
+                              r2orig,Base.Vector(1,0,0)).extrude(Base.Vector(XDepth))
+        r2 = Part.makeCylinder(self.__TunnelTopRadius,XDepth,
+                               r2orig,
+                               Base.Vector(1,0,0))
+        #self.a = temp
+        #self.b = r2
+        opening = opening.cut(temp.cut(r2))
+        return board.cut(opening)
+    def MakeWireHoles(self,board):
+        bb = board.BoundBox
+        X = bb.XMin
+        relX = X-self.origin.x
+        XDepth = bb.XLength
+        for y in self.__WireHoleYCenters:
+            hole = Part.makeCylinder(self.__WireHoleDiameter/2,XDepth,
+                                     self.origin.add(Base.Vector(relX,y,
+                                                                 self.__WireHoleZCenter)),
+                                     Base.Vector(1,0,0))
+            board = board.cut(hole)
+        return board            
+    def MakeBoltHoles(self,board):
+        bb = board.BoundBox
+        X = bb.XMin
+        relX = X-self.origin.x
+        XDepth = bb.XLength
+        for y in self.__BoltHoleYCenters:
+            for z in self.__BoltHoleZCenters:
+                hole = Part.makeCylinder(self.__BoltHoleDiameter/2,XDepth,
+                                     self.origin.add(Base.Vector(relX,y,z)),
+                                     Base.Vector(1,0,0))
+                board = board.cut(hole)
+        return board            
     def __init__(self,name,origin):
         if not isinstance(origin,Base.Vector):
             raise RuntimeError("origin is not a Vector!")
@@ -349,99 +389,141 @@ class BaseUnit(object):
                                         0)),
             self.__BaseSupportHeight,
             backlen)
-        self.leftsheet = Plywood.YZSheet(self.origin,self.__Depth,self.__TotalHeight)
-        self.rightsheet = Plywood.YZSheet(self.origin.add(Base.Vector(self.__Length-Plywood.ABThick(),0,0)),
+        self.leftsheet = Sheet.YZSheet(self.origin,self.__Depth,self.__TotalHeight)
+        self.rightsheet = Sheet.YZSheet(self.origin.add(Base.Vector(self.__Length-Sheet.ABThick(),0,0)),
                                           self.__Depth,self.__TotalHeight)
-        self.backsheet = Plywood.XZSheet(self.origin.add(Base.Vector(0,self.__Depth,0)),
+        self.backsheet = Sheet.XZSheet(self.origin.add(Base.Vector(0,self.__Depth,0)),
                                          self.__TotalHeight,self.__Length)
-        self.layoutsheet = Plywood.XYSheet(self.origin.add(Base.Vector(Units.mm(3/8),
+        self.layoutsheet = Sheet.XYSheet(self.origin.add(Base.Vector(Units.mm(3/8),
                                                                        0,
                                                                        self.__BaseSupportHeight)),
-                                           self.__Length-(2*Plywood.ABThick()),
+                                           self.__Length-(2*Sheet.ABThick()),
                                            self.__Depth,
                                            "Birch")
-        self.bottom = Plywood.XYSheet(self.origin.add(Base.Vector(0,0,
-                                                                  -Plywood.ABThick())),
+        self.bottom = Sheet.XYSheet(self.origin.add(Base.Vector(0,0,
+                                                                  -Sheet.ABThick())),
                                       self.__Length,
-                                      self.__Depth+Plywood.ABThick())
-        self.top = Plywood.XYSheet(self.origin.add(Base.Vector(0,
+                                      self.__Depth+Sheet.ABThick())
+        self.top = Sheet.XYSheet(self.origin.add(Base.Vector(0,
                                                                Units.mm(2),
                                                                self.__TotalHeight)),
                                    self.__Length,
-                                   self.__Depth-Units.mm(2)+Plywood.ABThick())
-        self.leftbackdrop = Plywood.YZSheet(self.origin.add(Base.Vector(Plywood.ABThick(),
+                                   self.__Depth-Units.mm(2)+Sheet.ABThick())
+        self.leftbackdrop = Sheet.YZSheet(self.origin.add(Base.Vector(Sheet.ABThick(),
                                                                         0,
-                                                                        self.__BaseSupportHeight+Plywood.BirchThick())),
-                                            self.__TotalHeight-(self.__BaseSupportHeight+Plywood.BirchThick()),
+                                                                        self.__BaseSupportHeight+Sheet.BirchThick())),
+                                            self.__TotalHeight-(self.__BaseSupportHeight+Sheet.BirchThick()),
                                             self.__Depth,
                                             "Masonite")
-        self.rightbackdrop = Plywood.YZSheet(self.origin.add(Base.Vector(self.__Length-Plywood.ABThick()-Plywood.MasoniteThick(),
+        self.rightbackdrop = Sheet.YZSheet(self.origin.add(Base.Vector(self.__Length-Sheet.ABThick()-Sheet.MasoniteThick(),
                                                                         0,
-                                                                        self.__BaseSupportHeight+Plywood.BirchThick())),
-                                            self.__TotalHeight-(self.__BaseSupportHeight+Plywood.BirchThick()),
+                                                                        self.__BaseSupportHeight+Sheet.BirchThick())),
+                                            self.__TotalHeight-(self.__BaseSupportHeight+Sheet.BirchThick()),
                                             self.__Depth,
                                             "Masonite")
-        self.backbackdrop = Plywood.XZSheet(self.origin.add(Base.Vector(Plywood.ABThick()+Plywood.MasoniteThick(),
-                                                                        self.__Depth-Plywood.MasoniteThick(),
-                                                                        self.__BaseSupportHeight+Plywood.BirchThick())),
-                                            self.__TotalHeight-self.__BaseSupportHeight-Plywood.BirchThick(),
-                                            self.__Length-(2*(Plywood.ABThick()+Plywood.MasoniteThick())),
+        self.backbackdrop = Sheet.XZSheet(self.origin.add(Base.Vector(Sheet.ABThick()+Sheet.MasoniteThick(),
+                                                                        self.__Depth-Sheet.MasoniteThick(),
+                                                                        self.__BaseSupportHeight+Sheet.BirchThick())),
+                                            self.__TotalHeight-self.__BaseSupportHeight-Sheet.BirchThick(),
+                                            self.__Length-(2*(Sheet.ABThick()+Sheet.MasoniteThick())),
                                             "Masonite")
         self.p1 = PineBoard.ZBeam(
                         self.origin.add(
                             Base.Vector(
-                                Plywood.ABThick()+Plywood.MasoniteThick(),
+                                Sheet.ABThick()+Sheet.MasoniteThick(),
                                 0,
-                                self.__BaseSupportHeight+Plywood.BirchThick())),
-                        self.__TotalHeight-self.__BaseSupportHeight-Plywood.BirchThick())
+                                self.__BaseSupportHeight+Sheet.BirchThick())),
+                        self.__TotalHeight-self.__BaseSupportHeight-Sheet.BirchThick())
         self.p2 = PineBoard.ZBeam(
                         self.origin.add(
                             Base.Vector(
-                                Plywood.ABThick()+Plywood.MasoniteThick(),
-                                self.__Depth-PineBoard.BoardThickness()-Plywood.MasoniteThick(),
-                                self.__BaseSupportHeight+Plywood.BirchThick())),
-                        self.__TotalHeight-self.__BaseSupportHeight-Plywood.BirchThick())
+                                Sheet.ABThick()+Sheet.MasoniteThick(),
+                                self.__Depth-PineBoard.BoardThickness()-Sheet.MasoniteThick(),
+                                self.__BaseSupportHeight+Sheet.BirchThick())),
+                        self.__TotalHeight-self.__BaseSupportHeight-Sheet.BirchThick())
         self.p3 = PineBoard.ZBeam(
                         self.origin.add(
                             Base.Vector(
-                                self.__Length-(Plywood.ABThick()+
-                                               Plywood.MasoniteThick()+
+                                self.__Length-(Sheet.ABThick()+
+                                               Sheet.MasoniteThick()+
                                                PineBoard.BoardThickness()),
                                 0,
-                                self.__BaseSupportHeight+Plywood.BirchThick())),
-                        self.__TotalHeight-self.__BaseSupportHeight-Plywood.BirchThick())
+                                self.__BaseSupportHeight+Sheet.BirchThick())),
+                        self.__TotalHeight-self.__BaseSupportHeight-Sheet.BirchThick())
         self.p4 = PineBoard.ZBeam(
                         self.origin.add(
                             Base.Vector(
-                                self.__Length-(Plywood.ABThick()+
-                                               Plywood.MasoniteThick()+
+                                self.__Length-(Sheet.ABThick()+
+                                               Sheet.MasoniteThick()+
                                                PineBoard.BoardThickness()),
-                                self.__Depth-PineBoard.BoardThickness()-Plywood.MasoniteThick(),
-                                self.__BaseSupportHeight+Plywood.BirchThick())),
-                        self.__TotalHeight-self.__BaseSupportHeight-Plywood.BirchThick())
+                                self.__Depth-PineBoard.BoardThickness()-Sheet.MasoniteThick(),
+                                self.__BaseSupportHeight+Sheet.BirchThick())),
+                        self.__TotalHeight-self.__BaseSupportHeight-Sheet.BirchThick())
         self.l1 = PineBoard.YBeam(
                     self.origin.add(
-                        Base.Vector(Plywood.ABThick()+Plywood.MasoniteThick(),
+                        Base.Vector(Sheet.ABThick()+Sheet.MasoniteThick(),
                                     PineBoard.BoardThickness(),
                                     self.__TotalHeight-PineBoard.BoardThickness())),
-                    self.__Depth-(2*PineBoard.BoardThickness())-Plywood.MasoniteThick())
+                    self.__Depth-(2*PineBoard.BoardThickness())-Sheet.MasoniteThick())
         self.l2 = PineBoard.YBeam(
                     self.origin.add(
-                        Base.Vector(self.__Length-(Plywood.ABThick()+
-                                               Plywood.MasoniteThick()+
+                        Base.Vector(self.__Length-(Sheet.ABThick()+
+                                               Sheet.MasoniteThick()+
                                                PineBoard.BoardThickness()),
                                     PineBoard.BoardThickness(),
                                     self.__TotalHeight-PineBoard.BoardThickness())),
-                    self.__Depth-(2*PineBoard.BoardThickness())-Plywood.MasoniteThick())
+                    self.__Depth-(2*PineBoard.BoardThickness())-Sheet.MasoniteThick())
         self.l3 = PineBoard.XBeam(
                     self.origin.add(
-                        Base.Vector(Plywood.ABThick()+Plywood.MasoniteThick()+
+                        Base.Vector(Sheet.ABThick()+Sheet.MasoniteThick()+
                                     PineBoard.BoardThickness(),
-                                    self.__Depth-Plywood.MasoniteThick(),
+                                    self.__Depth-Sheet.MasoniteThick(),
                                     self.__TotalHeight-PineBoard.BoardThickness())),
-                     self.__Length-(2*(Plywood.ABThick()+
-                                       Plywood.MasoniteThick()+
+                     self.__Length-(2*(Sheet.ABThick()+
+                                       Sheet.MasoniteThick()+
                                        PineBoard.BoardThickness())))
+        self.frontsheet = Sheet.XZSheet(
+                    self.origin.add(Base.Vector(0,
+                                                -Sheet.LexanThick(),
+                                                -Sheet.ABThick())),
+                    self.__TotalHeight-PineBoard.BoardThickness()+
+                        Sheet.ABThick(),
+                    self.__Length,
+                    "Lexan")
+        self.frontcover = Sheet.XZSheet(
+                    self.origin.add(Base.Vector(0,
+                                                -(Sheet.LexanThick()+
+                                                  Sheet.ABThick()),
+                                                -Sheet.ABThick())),
+                    self.__TotalHeight+Sheet.ABThick(),
+                    self.__Length)
+        self.frontfillstrip = Sheet.XZSheet(
+                    self.origin.add(Base.Vector(0,
+                                                -Sheet.MasoniteThick(),
+                                                self.__TotalHeight-
+                                                    PineBoard.BoardThickness())),
+                    PineBoard.BoardThickness(),
+                    self.__Length,
+                    "Masonite")
+        self.coverblock = PineBoard.XYBoard(
+                            self.origin.add(Base.Vector(
+                                Sheet.ABThick()+Sheet.MasoniteThick()+
+                                    PineBoard.BoardThickness(),
+                                0,
+                                self.__TotalHeight-PineBoard.BoardThickness())),
+                            self.__Length-(2*(Sheet.ABThick()+
+                                              Sheet.MasoniteThick()+
+                                              PineBoard.BoardThickness())),
+                            Units.mm(2))
+        self.covertop = Sheet.XYSheet(
+                        self.origin.add(Base.Vector(0,
+                                        -(Sheet.LexanThick()+           
+                                          Sheet.ABThick()),
+                                        self.__TotalHeight)),
+                        self.__Length,
+                        Units.mm(2)+Sheet.LexanThick()+Sheet.ABThick())
+        self.left1 = self.MakeWireHoles(self.left1)
+        self.right1 = self.MakeWireHoles(self.right1)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -468,39 +550,39 @@ class BaseUnit(object):
         obj = doc.addObject("Part::Feature",self.name+"_leftsheet")
         obj.Shape = self.leftsheet
         obj.Label=self.name+"_leftsheet"
-        obj.ViewObject.ShapeColor=Plywood.Color()
+        obj.ViewObject.ShapeColor=Sheet.Color()
         obj = doc.addObject("Part::Feature",self.name+"_rightsheet")
         obj.Shape = self.rightsheet
         obj.Label=self.name+"_rightsheet"
-        obj.ViewObject.ShapeColor=Plywood.Color()
+        obj.ViewObject.ShapeColor=Sheet.Color()
         obj = doc.addObject("Part::Feature",self.name+"_backsheet")
         obj.Shape = self.backsheet
         obj.Label=self.name+"_backsheet"
-        obj.ViewObject.ShapeColor=Plywood.Color()
+        obj.ViewObject.ShapeColor=Sheet.Color()
         obj = doc.addObject("Part::Feature",self.name+"_layoutsheet")
         obj.Shape = self.layoutsheet
         obj.Label=self.name+"_layoutsheet"
-        obj.ViewObject.ShapeColor=Plywood.BirchColor()
+        obj.ViewObject.ShapeColor=Sheet.BirchColor()
         obj = doc.addObject("Part::Feature",self.name+"_bottom")
         obj.Shape = self.bottom
         obj.Label=self.name+"_bottom"
-        obj.ViewObject.ShapeColor=Plywood.Color()
+        obj.ViewObject.ShapeColor=Sheet.Color()
         obj = doc.addObject("Part::Feature",self.name+"_top")
         obj.Shape = self.top
         obj.Label=self.name+"_top"
-        obj.ViewObject.ShapeColor=Plywood.Color()
+        obj.ViewObject.ShapeColor=Sheet.Color()
         obj = doc.addObject("Part::Feature",self.name+"_leftbackdrop")
         obj.Shape = self.leftbackdrop
         obj.Label=self.name+"_leftbackdrop"
-        obj.ViewObject.ShapeColor=Plywood.MasoniteColor()
+        obj.ViewObject.ShapeColor=Sheet.MasoniteColor()
         obj = doc.addObject("Part::Feature",self.name+"_rightbackdrop")
         obj.Shape = self.rightbackdrop
         obj.Label=self.name+"_rightbackdrop"
-        obj.ViewObject.ShapeColor=Plywood.MasoniteColor()
+        obj.ViewObject.ShapeColor=Sheet.MasoniteColor()
         obj = doc.addObject("Part::Feature",self.name+"_backbackdrop")
         obj.Shape = self.backbackdrop
         obj.Label=self.name+"_backbackdrop"
-        obj.ViewObject.ShapeColor=Plywood.MasoniteColor()
+        obj.ViewObject.ShapeColor=Sheet.MasoniteColor()
         obj = doc.addObject("Part::Feature",self.name+"_p1")
         obj.Shape = self.p1
         obj.Label=self.name+"_p1"
@@ -529,16 +611,74 @@ class BaseUnit(object):
         obj.Shape = self.l3
         obj.Label=self.name+"_l3"
         obj.ViewObject.ShapeColor=PineBoard.Color()
+        obj = doc.addObject("Part::Feature",self.name+"_frontsheet")
+        obj.Shape = self.frontsheet
+        obj.Label=self.name+"_frontsheet"
+        obj.ViewObject.Transparency=100
+        obj = doc.addObject("Part::Feature",self.name+"_frontcover")
+        obj.Shape = self.frontcover
+        obj.Label=self.name+"_frontcover"
+        obj.ViewObject.ShapeColor=Sheet.Color()
+        obj = doc.addObject("Part::Feature",self.name+"_frontfillstrip")
+        obj.Shape = self.frontfillstrip
+        obj.Label=self.name+"_frontfillstrip"
+        obj.ViewObject.ShapeColor=Sheet.MasoniteColor()
+        obj = doc.addObject("Part::Feature",self.name+"_coverblock")
+        obj.Shape = self.coverblock
+        obj.Label=self.name+"_coverblock"
+        obj.ViewObject.ShapeColor=PineBoard.Color()
+        obj = doc.addObject("Part::Feature",self.name+"_covertop")
+        obj.Shape = self.covertop
+        obj.Label=self.name+"_covertop"
+        obj.ViewObject.ShapeColor=Sheet.Color()
         
-
+class RightUnit(BaseUnit):
+    def __init__(self,name,origin):
+        super().__init__(name,origin)
+        self.left = self.MakeWireHoles(self.left)
+        self.leftsheet = self.MakeWireHoles(self.leftsheet)
+        self.left = self.MakeBoltHoles(self.left)
+        self.leftsheet = self.MakeBoltHoles(self.leftsheet)
+        self.leftsheet = self.MakeTunnelCut(self.leftsheet)
+        self.leftbackdrop = self.MakeTunnelCut(self.leftbackdrop)
+        
+class CenterUnit(BaseUnit):
+    def __init__(self,name,origin):
+        super().__init__(name,origin)
+        self.left = self.MakeWireHoles(self.left)
+        self.leftsheet = self.MakeWireHoles(self.leftsheet)
+        self.left = self.MakeBoltHoles(self.left)
+        self.leftsheet = self.MakeBoltHoles(self.leftsheet)
+        self.leftsheet = self.MakeTunnelCut(self.leftsheet)
+        self.leftbackdrop = self.MakeTunnelCut(self.leftbackdrop)
+        self.right = self.MakeWireHoles(self.right)
+        self.rightsheet = self.MakeWireHoles(self.rightsheet)
+        self.right = self.MakeBoltHoles(self.right)
+        self.rightsheet = self.MakeBoltHoles(self.rightsheet)
+        self.rightsheet = self.MakeTunnelCut(self.rightsheet)
+        self.rightbackdrop = self.MakeTunnelCut(self.rightbackdrop)
+        
+class LeftUnit(BaseUnit):
+    def __init__(self,name,origin):
+        super().__init__(name,origin)
+        self.right = self.MakeWireHoles(self.right)
+        self.rightsheet = self.MakeWireHoles(self.rightsheet)
+        self.right = self.MakeBoltHoles(self.right)
+        self.rightsheet = self.MakeBoltHoles(self.rightsheet)
+        self.rightsheet = self.MakeTunnelCut(self.rightsheet)
+        self.rightbackdrop = self.MakeTunnelCut(self.rightbackdrop)
+        
 if __name__ == '__main__':
     if "BenchWork" in App.listDocuments().keys():
         App.closeDocument("BenchWork")
     doc = App.newDocument("BenchWork")
     doc = App.activeDocument()
-    station = BaseUnit("BaseUnit",Base.Vector(0,0,0))
-    station.show(doc)
+    station1 = RightUnit("RightUnit",Base.Vector(Units.mm(Units.inches(8)),0,0))
+    station1.show(doc)
+    center = CenterUnit("CenterUnit",Base.Vector(Units.mm(Units.inches(4)),0,0))
+    center.show(doc)
+    station2 = LeftUnit("LeftUnit",Base.Vector(0,0,0))
+    station2.show(doc)
     Gui.activeDocument().activeView().viewTop()
     Gui.SendMsgToActiveView("ViewFit")
-    PineBoard.ListCuts("Pine.csv")
-    Plywood.ListCuts("Plywood.csv")
+    BOMHelper.ListCuts("BOM.csv")
