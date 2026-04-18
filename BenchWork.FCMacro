@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-17 09:09:12
-#  Last Modified : <260417.1857>
+#  Last Modified : <260417.2310>
 #
 #  Description	
 #
@@ -238,9 +238,13 @@ class Plywood(object):
     def BirchThick(cls):
         return cls.__Birch1_4Thick
     __Color = (1.0,1.0,0.0)
+    __BirchColor = (1.0,1.0,1.0)
     @classmethod
     def Color(cls):
         return cls.__Color
+    @classmethod
+    def BirchColor(cls):
+        return cls.__BirchColor
     @classmethod
     def XYSheet(cls,origin,width,length,plytype="AB"):
         if not isinstance(origin,Base.Vector):
@@ -328,7 +332,13 @@ class BaseUnit(object):
         self.rightsheet = Plywood.YZSheet(self.origin.add(Base.Vector(self.__Length-Plywood.ABThick(),0,0)),
                                           self.__Depth,self.__TotalHeight)
         self.backsheet = Plywood.XZSheet(self.origin.add(Base.Vector(0,self.__Depth,0)),
-                                         self.__TotalHeight,self.__Length)                                                      
+                                         self.__TotalHeight,self.__Length)
+        self.layoutsheet = Plywood.XYSheet(self.origin.add(Base.Vector(Units.mm(3/8),
+                                                                       0,
+                                                                       self.__BaseSupportHeight)),
+                                           self.__Length-Units.mm(2*(3/8)),
+                                           self.__Depth,
+                                           "Birch")
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -364,6 +374,10 @@ class BaseUnit(object):
         obj.Shape = self.backsheet
         obj.Label=self.name+"_backsheet"
         obj.ViewObject.ShapeColor=Plywood.Color()
+        obj = doc.addObject("Part::Feature",self.name+"_layoutsheet")
+        obj.Shape = self.layoutsheet
+        obj.Label=self.name+"_layoutsheet"
+        obj.ViewObject.ShapeColor=Plywood.BirchColor()
         
 
 if __name__ == '__main__':
