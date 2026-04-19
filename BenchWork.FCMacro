@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-17 09:09:12
-#  Last Modified : <260418.2100>
+#  Last Modified : <260419.0907>
 #
 #  Description	
 #
@@ -42,7 +42,7 @@
 
 
 import FreeCAD as App
-import Part, TechDraw, Mesh
+import Part, TechDraw, TechDrawGui
 from FreeCAD import Base
 
 import os
@@ -52,6 +52,28 @@ import csv
 import math
 import Units
 from debug import debug
+
+import time
+from PySide.QtCore import QCoreApplication, QEventLoop, QTimer
+
+def execute(loop, ms):
+    timer = QTimer()
+    timer.setSingleShot(True)
+    
+    timer.timeout.connect(loop.quit)
+    timer.start(ms)
+    loop.exec_()
+
+def sleep(ms):
+    if not QCoreApplication.instance():
+        app = QCoreApplication([])
+        execute(app, ms)
+    else:
+        loop = QEventLoop()
+        execute(loop, ms)
+                                        
+
+
 
 import csv
 
@@ -310,6 +332,35 @@ class BaseUnit(object):
     __TunnelZ0         = Units.mm(5.5)+Sheet.BirchThick()
     __TunnelZTop       = Units.mm(5.5)+Sheet.BirchThick()+Units.mm(3)
     __TunnelTopRadius  = Units.mm(1/2)
+    @classmethod
+    def TunnelCutPattern(cls):
+        panelorig = Base.Vector(0,0,0)
+        panel = Sheet.YZSheet(panelorig,cls.__Depth,cls.__TotalHeight)
+        bb = panel.BoundBox
+        X = bb.XMin 
+        XDepth = bb.XLength
+        owidth = cls.__TunnelY2-cls.__TunnelY1
+        oheight = cls.__TunnelZTop-cls.__TunnelZ0
+        openorig = Base.Vector(X,cls.__TunnelY1+owidth,cls.__TunnelZ0)
+        r1orig = openorig.add(Base.Vector(0,cls.__TunnelTopRadius,oheight-cls.__TunnelTopRadius))
+        temp = Part.makePlane(cls.__TunnelTopRadius*2,
+                              cls.__TunnelTopRadius*2,
+                              r1orig,Base.Vector(1,0,0)).extrude(Base.Vector(XDepth,0,0))
+        r1 = Part.makeCylinder(cls.__TunnelTopRadius,XDepth,
+                               r1orig.add(Base.Vector(0,-cls.__TunnelTopRadius*2,0)),
+                               Base.Vector(1,0,0))
+        opening = opening.cut(temp.cut(r1))
+        r2orig = openorig.add(Base.Vector(0,-owidth+cls.__TunnelTopRadius,
+                                          oheight-cls.__TunnelTopRadius))
+        temp = Part.makePlane(cls.__TunnelTopRadius*2,
+                              cls.__TunnelTopRadius*2,
+                              r2orig,Base.Vector(1,0,0)).extrude(Base.Vector(XDepth))
+        r2 = Part.makeCylinder(cls.__TunnelTopRadius,XDepth,
+                               r2orig,
+                               Base.Vector(1,0,0))
+        opening = opening.cut(temp.cut(r2))
+        panel = panel.cut(opening)
+        return panel
     def MakeTunnelCut(self,board):
         bb = board.BoundBox
         X = bb.XMin
@@ -343,6 +394,22 @@ class BaseUnit(object):
         #self.b = r2
         opening = opening.cut(temp.cut(r2))
         return board.cut(opening)
+    @classmethod
+    def WireHolesPattern(cls):
+        panelorig = Base.Vector(0,0,0)
+        panel = PineBoard.ZYBoard(panelorig,cls.__BaseSupportHeight,
+                                  cls.__Depth)
+        bb = panel.BoundBox
+        X = bb.XMin 
+        relX = X-panelorig.x
+        XDepth = bb.XLength
+        for y in cls.__WireHoleYCenters:
+            hole = Part.makeCylinder(cls.__WireHoleDiameter/2,XDepth,
+                                     panelorig.add(Base.Vector(relX,y,
+                                                                 cls.__WireHoleZCenter)),
+                                     Base.Vector(1,0,0))
+            panel = panel.cut(hole)
+        return panel            
     def MakeWireHoles(self,board):
         bb = board.BoundBox
         X = bb.XMin
@@ -354,7 +421,20 @@ class BaseUnit(object):
                                                                  self.__WireHoleZCenter)),
                                      Base.Vector(1,0,0))
             board = board.cut(hole)
-        return board            
+        return board
+    @classmethod
+    def AddBoltHolesPattern(cls,panelorig,panel):
+        bb = panel.BoundBox
+        X = bb.XMin 
+        relX = X-panelorig.x
+        XDepth = bb.XLength
+        for y in cls.__BoltHoleYCenters:
+            for z in cls.__BoltHoleZCenters:
+                hole = Part.makeCylinder(cls.__BoltHoleDiameter/2,XDepth,
+                                     panelorigin.add(Base.Vector(relX,y,z)),
+                                     Base.Vector(1,0,0))
+                panel = panel.cut(hole)
+        return panel            
     def MakeBoltHoles(self,board):
         bb = board.BoundBox
         X = bb.XMin
