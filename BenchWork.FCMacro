@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-17 09:09:12
-#  Last Modified : <260418.1718>
+#  Last Modified : <260418.2100>
 #
 #  Description	
 #
@@ -288,6 +288,15 @@ class BaseUnit(object):
     __Length = Units.mm(Units.inches(3))
     __Depth  = Units.mm(12)
     __TotalHeight = Units.mm(12)
+    @property
+    def Length(self):
+        return self.__Length
+    @property
+    def Depth(self):
+        return self.__Depth;
+    @property
+    def TotalHeight(self):
+        return self.__TotalHeight
     __BaseSupportHeight = Units.mm(5.5)
     __BaseSupportOffsets = [ Units.mm(3/8), Units.mm(11.5), Units.mm(23.5), Units.mm((Units.inches(3)-(3/8))-(3/4)) ]
     __WireHoleYCenters = [ Units.mm(3), Units.mm(6), Units.mm(9) ]
@@ -641,6 +650,23 @@ class RightUnit(BaseUnit):
         self.leftsheet = self.MakeBoltHoles(self.leftsheet)
         self.leftsheet = self.MakeTunnelCut(self.leftsheet)
         self.leftbackdrop = self.MakeTunnelCut(self.leftbackdrop)
+        self.leftcover = Sheet.YZSheet(self.origin.add(Base.Vector(
+                                            -Sheet.ABThick(),
+                                            -(Sheet.LexanThick()+
+                                              Sheet.ABThick()),
+                                            -Sheet.ABThick())),
+                                       self.TotalHeight+(2*Sheet.ABThick()),
+                                       self.Depth+
+                                        Sheet.LexanThick()+
+                                        (2*Sheet.ABThick()))
+    def show(self,doc=None):
+        if doc==None:
+            doc = App.activeDocument()
+        super().show(doc)
+        obj = doc.addObject("Part::Feature",self.name+"_leftcover")
+        obj.Shape = self.leftcover
+        obj.Label=self.name+"_leftcover"
+        obj.ViewObject.ShapeColor=Sheet.Color()
         
 class CenterUnit(BaseUnit):
     def __init__(self,name,origin):
@@ -651,12 +677,42 @@ class CenterUnit(BaseUnit):
         self.leftsheet = self.MakeBoltHoles(self.leftsheet)
         self.leftsheet = self.MakeTunnelCut(self.leftsheet)
         self.leftbackdrop = self.MakeTunnelCut(self.leftbackdrop)
+        self.leftcover = Sheet.YZSheet(self.origin.add(Base.Vector(
+                                            -Sheet.ABThick(),
+                                            -(Sheet.LexanThick()+
+                                              Sheet.ABThick()),
+                                            -Sheet.ABThick())),
+                                       self.TotalHeight+(2*Sheet.ABThick()),
+                                       self.Depth+
+                                        Sheet.LexanThick()+
+                                        (2*Sheet.ABThick()))
         self.right = self.MakeWireHoles(self.right)
         self.rightsheet = self.MakeWireHoles(self.rightsheet)
         self.right = self.MakeBoltHoles(self.right)
         self.rightsheet = self.MakeBoltHoles(self.rightsheet)
         self.rightsheet = self.MakeTunnelCut(self.rightsheet)
         self.rightbackdrop = self.MakeTunnelCut(self.rightbackdrop)
+        self.rightcover = Sheet.YZSheet(self.origin.add(Base.Vector(
+                                            self.Length,
+                                            -(Sheet.LexanThick()+
+                                              Sheet.ABThick()),
+                                            -Sheet.ABThick())),
+                                       self.TotalHeight+(2*Sheet.ABThick()),
+                                       self.Depth+
+                                        Sheet.LexanThick()+
+                                        (2*Sheet.ABThick()))
+    def show(self,doc=None):
+        if doc==None:
+            doc = App.activeDocument()
+        super().show(doc)
+        obj = doc.addObject("Part::Feature",self.name+"_leftcover")
+        obj.Shape = self.leftcover
+        obj.Label=self.name+"_leftcover"
+        obj.ViewObject.ShapeColor=Sheet.Color()
+        obj = doc.addObject("Part::Feature",self.name+"_rightcover")
+        obj.Shape = self.rightcover
+        obj.Label=self.name+"_rightcover"
+        obj.ViewObject.ShapeColor=Sheet.Color()
         
 class LeftUnit(BaseUnit):
     def __init__(self,name,origin):
@@ -667,6 +723,23 @@ class LeftUnit(BaseUnit):
         self.rightsheet = self.MakeBoltHoles(self.rightsheet)
         self.rightsheet = self.MakeTunnelCut(self.rightsheet)
         self.rightbackdrop = self.MakeTunnelCut(self.rightbackdrop)
+        self.rightcover = Sheet.YZSheet(self.origin.add(Base.Vector(
+                                            self.Length,
+                                            -(Sheet.LexanThick()+
+                                              Sheet.ABThick()),
+                                            -Sheet.ABThick())),
+                                       self.TotalHeight+(2*Sheet.ABThick()),
+                                       self.Depth+
+                                        Sheet.LexanThick()+
+                                        (2*Sheet.ABThick()))
+    def show(self,doc=None):
+        if doc==None:
+            doc = App.activeDocument()
+        super().show(doc)
+        obj = doc.addObject("Part::Feature",self.name+"_rightcover")
+        obj.Shape = self.rightcover
+        obj.Label=self.name+"_rightcover"
+        obj.ViewObject.ShapeColor=Sheet.Color()
         
 if __name__ == '__main__':
     if "BenchWork" in App.listDocuments().keys():
