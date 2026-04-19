@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-17 09:09:12
-#  Last Modified : <260419.0907>
+#  Last Modified : <260419.1704>
 #
 #  Description	
 #
@@ -52,6 +52,7 @@ import csv
 import math
 import Units
 from debug import debug
+import datetime                                                                 
 
 import time
 from PySide.QtCore import QCoreApplication, QEventLoop, QTimer
@@ -835,3 +836,295 @@ if __name__ == '__main__':
     Gui.activeDocument().activeView().viewTop()
     Gui.SendMsgToActiveView("ViewFit")
     BOMHelper.ListCuts("BOM.csv")
+    #
+    for g in doc.findObjects('TechDraw::DrawSVGTemplate'):
+        doc.removeObject(g.Name)
+    for g in doc.findObjects('TechDraw::DrawPage'):
+        doc.removeObject(g.Name)
+    for g in doc.findObjects('Spreadsheet::Sheet'):
+        doc.removeObject(g.Name)
+    for g in doc.findObjects('TechDraw::DrawViewPart'):
+        doc.removeObject(g.Name)
+    for g in doc.findObjects('TechDraw::DrawViewDimension'):
+        doc.removeObject(g.Name)
+    template = doc.addObject('TechDraw::DrawSVGTemplate','USLetterTemplate')
+    template.Template = App.getResourceDir()+"Mod/TechDraw/Templates/USLetter_Landscape.svg"
+    edt = template.EditableTexts
+    edt['CompanyName'] = "Deepwoods Software"
+    edt['CompanyAddress'] = '51 Locke Hill Road, Wendell, MA 01379 USA'   
+    edt['DrawingTitle1']= 'Show Demo (Two station push-pull)'
+    edt['DrawingTitle3']= ""
+    edt['DrawnBy'] = "Robert Heller"
+    edt['CheckedBy'] = ""
+    edt['Approved1'] = ""
+    edt['Approved2'] = ""
+    edt['Code'] = ""
+    edt['Weight'] = ''
+    edt['DrawingNumber'] = datetime.datetime.now().ctime()
+    edt['Revision'] = "A"
+    template.EditableTexts = edt
+    #*****
+    # General wire holes (Inner supports)
+    #
+    page = doc.addObject('TechDraw::DrawPage','WireHolesDrillSheetPage')
+    page.Template = template
+    edt = page.Template.EditableTexts
+    edt['DrawingTitle2']= "Wire Holes"
+    edt['scale'] = 'Scale: .5'
+    edt['Sheet'] = "Sheet 1 of 3"
+    page.Template.EditableTexts = edt
+    page.ViewObject.show()
+    view = doc.addObject('TechDraw::DrawViewPart','WireHolesDrill')
+    page.addView(view)
+    view.Source = doc.getObject("RightUnit_left1")
+    view.Direction=(1.0,0,0)
+    view.ScaleType='Custom'
+    view.Scale = 1/2
+    view.X = 140
+    view.Y = 120
+    #
+    # Vertex1 origin
+    # Vertex12 h1 center
+    # Vertex9  h2 center
+    # Vertex6  h3 center
+    # Edge6    h1 circumfrence
+    #
+    dim1 = doc.addObject('TechDraw::DrawViewDimension','H1X')
+    dim1.Type = 'DistanceX'
+    dim1.References2D = [ (view, 'Vertex1'), (view, 'Vertex12') ]
+    dim1.FormatSpec='3in'
+    dim1.Arbitrary = True
+    dim1.X = -53
+    dim1.Y = -8
+    page.addView(dim1)
+    dim2 = doc.addObject('TechDraw::DrawViewDimension','H2X')
+    dim2.Type = 'DistanceX'
+    dim2.References2D = [ (view, 'Vertex1'), (view, 'Vertex9') ]
+    dim2.FormatSpec='6in'
+    dim2.Arbitrary = True
+    dim2.X = -15
+    dim2.Y = -15
+    page.addView(dim2)
+    dim3 = doc.addObject('TechDraw::DrawViewDimension','H3X')
+    dim3.Type = 'DistanceX'
+    dim3.References2D = [ (view, 'Vertex1'), (view, 'Vertex6') ]
+    dim3.FormatSpec='9in'
+    dim3.Arbitrary = True
+    dim3.X = 25
+    dim3.Y = -20
+    page.addView(dim3)
+    dim4 = doc.addObject('TechDraw::DrawViewDimension','V1Y')
+    dim4.Type = 'DistanceY'
+    dim4.References2D = [ (view, 'Vertex1'), (view, 'Vertex6') ]
+    dim4.FormatSpec="%.3fin"%(5.5/2)
+    dim4.Arbitrary = True
+    dim4.X = -72
+    dim4.Y =  15
+    page.addView(dim4)
+    dim5 = doc.addObject('TechDraw::DrawViewDimension','D1')
+    dim5.Type = 'Diameter'
+    dim5.References2D = [ (view, 'Edge6') ]
+    dim5.FormatSpec="2in (3x)"
+    dim5.Arbitrary = True
+    dim5.X = -14
+    dim5.Y =  23
+    page.addView(dim5)
+    
+    doc.recompute()
+    sleep(500)
+    TechDrawGui.exportPageAsPdf(page,"WireHolesDrillSheetPage.pdf")
+    #*****
+    # Endplates wire and bolt holes
+    #
+    page = doc.addObject('TechDraw::DrawPage','EndPlateHolesDrillSheetPage')
+    page.Template = template
+    edt = page.Template.EditableTexts
+    edt['DrawingTitle2']= "Endplates wire and bolt Holes"
+    edt['scale'] = 'Scale: .5'
+    edt['Sheet'] = "Sheet 2 of 3"
+    page.Template.EditableTexts = edt
+    page.ViewObject.show()
+    view = doc.addObject('TechDraw::DrawViewPart','WireHolesDrill')
+    page.addView(view)
+    view.Source = doc.getObject("RightUnit_left")
+    view.Direction=(1.0,0,0)
+    view.ScaleType='Custom'
+    view.Scale = 1/2
+    view.X = 140
+    view.Y = 120
+    #
+    # Vertex1 origin
+    # Wire Holes (same as inner)
+    # Vertex21 h1 center
+    # Vertex18 h2 center
+    # Vertex9  h3 center
+    # Edge9    h1 circumfrence
+    #
+    dim1 = doc.addObject('TechDraw::DrawViewDimension','H1X')
+    dim1.Type = 'DistanceX'
+    dim1.References2D = [ (view, 'Vertex1'), (view, 'Vertex21') ]
+    dim1.FormatSpec='3in'
+    dim1.Arbitrary = True
+    dim1.X = -46
+    dim1.Y = -11
+    page.addView(dim1)
+    dim2 = doc.addObject('TechDraw::DrawViewDimension','H2X')
+    dim2.Type = 'DistanceX'
+    dim2.References2D = [ (view, 'Vertex1'), (view, 'Vertex18') ]
+    dim2.FormatSpec='6in'
+    dim2.Arbitrary = True
+    dim2.X = -15
+    dim2.Y = -15
+    page.addView(dim2)
+    dim3 = doc.addObject('TechDraw::DrawViewDimension','H3X')
+    dim3.Type = 'DistanceX'
+    dim3.References2D = [ (view, 'Vertex1'), (view, 'Vertex9') ]
+    dim3.FormatSpec='9in'
+    dim3.Arbitrary = True
+    dim3.X = 25
+    dim3.Y = -20
+    page.addView(dim3)
+    dim4 = doc.addObject('TechDraw::DrawViewDimension','V1Y')
+    dim4.Type = 'DistanceY'
+    dim4.References2D = [ (view, 'Vertex1'), (view, 'Vertex9') ]
+    dim4.FormatSpec="%.3fin"%(5.5/2)
+    dim4.Arbitrary = True
+    dim4.X = -72
+    dim4.Y =  15
+    page.addView(dim4)
+    dim5 = doc.addObject('TechDraw::DrawViewDimension','D1')
+    dim5.Type = 'Diameter'
+    dim5.References2D = [ (view, 'Edge9') ]
+    dim5.FormatSpec="2in (3x)"
+    dim5.Arbitrary = True
+    dim5.X = -14
+    dim5.Y =  23
+    page.addView(dim5)
+    # Bolt holes
+    # Vertex15 b1 center
+    # Vertex24 b2 center
+    # Vertex12 b3 center
+    # Vertex6  b4 center
+    # Edge6    b3 circumfrence
+    dim6 = doc.addObject('TechDraw::DrawViewDimension','BH1X')
+    dim6.Type = 'DistanceX'
+    dim6.References2D = [ (view, 'Vertex1'), (view, 'Vertex24') ]
+    dim6.FormatSpec='1.5in'
+    dim6.Arbitrary = True 
+    dim6.X = -66
+    dim6.Y = -51
+    page.addView(dim6) 
+    dim7 = doc.addObject('TechDraw::DrawViewDimension','BH2X')
+    dim7.Type = 'DistanceX'
+    dim7.References2D = [ (view, 'Vertex1'), (view, 'Vertex12') ]
+    dim7.FormatSpec='10.5in'
+    dim7.Arbitrary = True 
+    dim7.X =  44
+    dim7.Y = -37
+    page.addView(dim7) 
+
+    dim8 = doc.addObject('TechDraw::DrawViewDimension','BH1Y')
+    dim8.Type = 'DistanceY'
+    dim8.References2D = [ (view, 'Vertex1'), (view, 'Vertex6') ]
+    dim8.FormatSpec='1.5in'
+    dim8.Arbitrary = True 
+    dim8.X = -94
+    dim8.Y = -25
+    page.addView(dim8) 
+    dim9 = doc.addObject('TechDraw::DrawViewDimension','BH2Y')
+    dim9.Type = 'DistanceY'
+    dim9.References2D = [ (view, 'Vertex1'), (view, 'Vertex12') ]
+    dim9.FormatSpec='4in'
+    dim9.Arbitrary = True 
+    dim9.X = -107
+    dim9.Y =   -4
+    page.addView(dim9) 
+
+    dim10 = doc.addObject('TechDraw::DrawViewDimension','BD1')
+    dim10.Type = 'Diameter'
+    dim10.References2D = [ (view, 'Edge6') ]
+    dim10.FormatSpec=".25in (4x)"
+    dim10.Arbitrary = True
+    dim10.X =  93
+    dim10.Y =  26
+    page.addView(dim10)
+
+    doc.recompute()
+    sleep(500)
+    TechDrawGui.exportPageAsPdf(page,"EndPlateHolesDrillSheetPage.pdf")
+    #****
+    # Endplates tunnel cutout
+    #
+    page = doc.addObject('TechDraw::DrawPage','EndPlateTunnelCutOut')
+    page.Template = template
+    edt = page.Template.EditableTexts
+    edt['DrawingTitle2']= "Endplates Tunnel cutout"
+    edt['scale'] = 'Scale: .25'
+    edt['Sheet'] = "Sheet 3 of 3"
+    page.Template.EditableTexts = edt
+    page.ViewObject.show()
+    view = doc.addObject('TechDraw::DrawViewPart','EndPlateTunnelCutOut')
+    page.addView(view)
+    view.Source = doc.getObject("RightUnit_leftsheet")
+    view.Direction=(1.0,0,0)
+    view.ScaleType='Custom'
+    view.Scale = 1/4
+    view.X = 140
+    view.Y = 120
+    #
+    # Vertex1 origin
+    # Vertex32 A
+    # Vertex30 B
+    # Edge14   Curve 1
+    # Vertex31 Curve 1 center
+    # Vertex29 C
+    # Vertex27 D
+    # Edge12   Curve 2
+    # Vertex28 Curve 2 center
+    # Vertex26 E
+    # Vertex25 F
+    #
+    dim1 = doc.addObject('TechDraw::DrawViewDimension','H1X')
+    dim1.Type = 'DistanceX'
+    dim1.References2D = [ (view, 'Vertex1'), (view, 'Vertex32') ]
+    dim1.FormatSpec='2.25in'
+    dim1.Arbitrary = True
+    dim1.X = -50
+    dim1.Y =  39
+    page.addView(dim1)
+    dim2 = doc.addObject('TechDraw::DrawViewDimension','H2X')
+    dim2.Type = 'DistanceX'
+    dim2.References2D = [ (view, 'Vertex1'), (view, 'Vertex25') ]
+    dim2.FormatSpec='5.75in'
+    dim2.Arbitrary = True
+    dim2.X = -20
+    dim2.Y =  59
+    page.addView(dim2)
+    dim3 = doc.addObject('TechDraw::DrawViewDimension','H1Y')
+    dim3.Type = 'DistanceY'
+    dim3.References2D = [ (view, 'Vertex1'), (view, 'Vertex32') ]
+    dim3.FormatSpec='5.75in'
+    dim3.Arbitrary = True
+    dim3.X = -54
+    dim3.Y = -10
+    page.addView(dim3)
+    dim4 = doc.addObject('TechDraw::DrawViewDimension','H2Y')
+    dim4.Type = 'DistanceY'
+    dim4.References2D = [ (view, 'Vertex1'), (view, 'Vertex29') ]
+    dim4.FormatSpec='8.75in'
+    dim4.Arbitrary = True
+    dim4.X = -66
+    dim4.Y =  10
+    page.addView(dim4)
+    dim5 = doc.addObject('TechDraw::DrawViewDimension','Rad1')
+    dim5.Type = 'Radius'
+    dim5.References2D = [ (view, 'Edge12') ]
+    dim5.FormatSpec='.5 radius (2x)'
+    dim5.Arbitrary = True
+    dim5.X =  14
+    dim5.Y =  45
+    page.addView(dim5)
+    
+    doc.recompute()
+    sleep(500)
+    TechDrawGui.exportPageAsPdf(page,"EndPlateTunnelCutOutPage.pdf")
