@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-17 09:09:12
-#  Last Modified : <260419.1704>
+#  Last Modified : <260420.0755>
 #
 #  Description	
 #
@@ -1119,7 +1119,7 @@ if __name__ == '__main__':
     dim5 = doc.addObject('TechDraw::DrawViewDimension','Rad1')
     dim5.Type = 'Radius'
     dim5.References2D = [ (view, 'Edge12') ]
-    dim5.FormatSpec='.5 radius (2x)'
+    dim5.FormatSpec='.5in radius (2x)'
     dim5.Arbitrary = True
     dim5.X =  14
     dim5.Y =  45
