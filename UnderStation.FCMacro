@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260203.1235>
+#  Last Modified : <260421.1702>
 #
 #  Description	
 #
@@ -53,6 +53,77 @@ import math
 import Units
 from debug import debug
 
+def NormalizeMM(x):
+    return round(x,3)
+
+class BOMHelper(object):
+    __BOM = dict()
+    @classmethod
+    def AddPiece(cls,width,height,kind):
+        key = (NormalizeMM(width),NormalizeMM(height),kind)
+        if key in cls.__BOM:
+            cls.__BOM[key] += 1
+        else:
+            cls.__BOM[key] = 1
+    @classmethod
+    def _normPartSizeMM(cls,t):
+        return ("%.3fx%.3f" % t)
+    @staticmethod
+    def _inch(mm):
+        return mm / 25.4
+    @classmethod
+    def _normPartSizeIN(cls,t):
+        X, Y = t
+        return ("%.4fx%.4f" % (cls._inch(X), cls._inch(Y)))
+    _units = 'in'
+    @classmethod
+    def SetUnits(cls,units):
+        if units == 'in' or units == 'mm':
+            cls._units = units
+        else:
+            raise RuntimeError("Unsupport units!")
+    @classmethod
+    def GetUnits(cls):
+        return cls._units
+    @classmethod
+    def _normPartSize(cls,t):
+        if cls._units == 'in':
+            return cls._normPartSizeIN(t)
+        elif cls._units == 'mm':
+            return BOMHelper._normPartSizeMM(t)
+        else:
+            raise RuntimeError("Unsupport units!")
+    @classmethod
+    def ListCuts(cls,filename):
+        keys = list(cls.__BOM.keys())
+        keys.sort()
+        f = open(filename,"w")
+        w = csv.writer(f)
+        w.writerow([("Size (%s)" % cls._units),"Kind","Count"])
+        for key in keys:
+            X, Y, kind = key
+            w.writerow([cls._normPartSize((X,Y)),kind,cls.__BOM[key]])
+        f.close()
+
+class PartsHelper(object):
+    __BOP = dict()
+    @classmethod
+    def AddPart(cls,part):
+        if part in cls.__BOP:
+            cls.__BOP[part] += 1
+        else:
+            cls.__BOP[part] = 1
+    @classmethod
+    def ListParts(cls,filename):
+        parts = list(cls.__BOP.keys())
+        parts.sort()
+        f = open(filename,"w")
+        w = csv.writer(f)
+        w.writerow(["Part","Count"])
+        for part in parts:
+            w.writerow([ part, cls.__BOP[part] ])
+        f.close()
+
 class Elevator(object):
     __CabinWidth  = Units.HOScale(1600)
     __CabinLength = Units.HOScale(2100)
@@ -81,12 +152,16 @@ class Elevator(object):
         obj.Label=self.name+"_shaft"
         obj.ViewObject.ShapeColor=self.__ShaftColor
 
-class UnderStation(object):
-    __ShortPlatformLength = Units.mm(11.25)
-    __LongPlatformLength  = Units.mm(22.5)
-    __PlatformWidth       = Units.mm(2.3)
+class UnderStation(BOMHelper, PartsHelper):
+    # Walthers Cornerstone Part # 933-3175
+    # Butterfly Style Station Platform Shelter 11 x 2-1/8 x 2-1/4"
+    __ShortPlatformLength = Units.mm(11)
+    # 2X end to end
+    __LongPlatformLength  = Units.mm(22)
+    __PlatformWidth       = Units.mm(2.125)
+    __PlatformRoofHeight  = Units.mm(2.25)
+    # Raised platform (level boarding)
     __PlatformHeight      = Units.mm(Units.HOScale(51))
-    __PlatformRoofHeight  = Units.mm(Units.HOScale(Units.inches(14)))
     __CombinedTrackAndPlatformWidth = Units.mm(8.1)
     __MainWallWidth = Units.HOScale(Units.mm(6))
     __GlassWallWidth  = Units.HOScale(Units.mm(3))
@@ -161,6 +236,7 @@ class UnderStation(object):
                 lastLanding = z
             else:
                 x = x+tread
+        self.AddPart("Stairs_%.4fx%.4f"%(width,height))
         return stair
     def __makeStairsRev(self,origin,height,width,extraLanding=0):
         z=0
@@ -187,6 +263,7 @@ class UnderStation(object):
                 lastLanding = z
             else:
                 x = x+tread
+        self.AddPart("Stairs_%.4fx%.4f"%(width,height))
         return stair
     def __init__(self,name,origin):
         self.name = name
@@ -199,6 +276,7 @@ class UnderStation(object):
                             Units.mm(8.1)+self.__MainWallWidth,
                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
             self.__TotalStationHeight+self.__StationUnderOffset+self.__CurbHeight)
+        self.AddPart("StreetElevator")
         streetStairLen = self.__TotalStairLength(self.__StreetStairTotalRise,
                                                  self.__StreetStairWidth)
         #debug("*** UnderStation.__init__(): streetStairLen = %f",streetStairLen)
@@ -241,13 +319,16 @@ class UnderStation(object):
                                            self.__TotalStationDepth+(2*self.__MainWallWidth),
                                            self.origin.add(Base.Vector(-self.__MainWallWidth,0,-(self.__TotalStationHeight+self.__StationUnderOffset))))\
                    .extrude(Base.Vector(0,0,-self.__MainWallWidth))
+        bb = self.stationFloor.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         elevator1Origin = self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
                                         self.__CombinedTrackAndPlatformWidth-Elevator.ShaftLength,
                                         -(self.__TotalStationHeight+self.__StationUnderOffset)))
         self.platform1Elevator = Elevator(
             "Platform1Elevator",
             elevator1Origin,
-            self.__PlatformStairTotalRise)            
+            self.__PlatformStairTotalRise)
+        self.AddPart("PlatformElevator")
         elevatorShelterOrigin = Base.Vector(elevator1Origin.x,
                                             elevator1Origin.y+Elevator.ShaftLength,
                                             origin.z+self.__PlatformHeight)
@@ -261,16 +342,19 @@ class UnderStation(object):
                                                 0)),
                                          Base.Vector(1,0,0))\
               .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
-        
-        self.elevator1Shelter = elevatorShelter.fuse(
-            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+        bb = elevatorShelter.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        e1sA = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
                            self.__PlatformStairWidth,
                            elevatorShelterOrigin.add(
                             Base.Vector(
                                 Elevator.ShaftWidth,
                                 -Elevator.ShaftLength,
                                 0)),
-                           Base.Vector(0,1,0)).extrude(Base.Vector(0,self.__GlassWallWidth)))
+                           Base.Vector(0,1,0)).extrude(Base.Vector(0,self.__GlassWallWidth))
+        self.elevator1Shelter = elevatorShelter.fuse(e1sA)
+        bb = e1sA.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         postSkip1 = (elevator1Origin.x,elevator1Origin.x+Elevator.ShaftWidth+self.__PlatformStairWidth)
         elevator2Origin = self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
                                         0,
@@ -279,6 +363,7 @@ class UnderStation(object):
             "Platform2Elevator",
             elevator2Origin,
             self.__PlatformStairTotalRise)
+        self.AddPart("PlatformElevator")
         elevatorShelterOrigin = Base.Vector(elevator2Origin.x,
                                             elevator2Origin.y+Elevator.ShaftLength,
                                             origin.z+self.__PlatformHeight)
@@ -292,15 +377,19 @@ class UnderStation(object):
                                                 0)),
                                          Base.Vector(1,0,0))\
               .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
-        self.elevator2Shelter = elevatorShelter.fuse(
-            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+        bb = elevatorShelter.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        e2sA = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
                            self.__PlatformStairWidth,
                            elevatorShelterOrigin.add(
                             Base.Vector(
                                 Elevator.ShaftWidth,
                                 0,
                                 0)),
-                           Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth)))
+                           Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth))
+        self.elevator2Shelter = elevatorShelter.fuse(e2sA)
+        bb = e2sA.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         platformBaseHeight = self.__PlatformHeight-Units.mm(Units.HOScale(12))
         platformBaseExtrude = Base.Vector(0,0,platformBaseHeight)
         platformBaseWidth = self.__PlatformWidth-Units.mm(Units.HOScale(12))
@@ -314,6 +403,8 @@ class UnderStation(object):
                                   platformBaseWidth,
                                   p1borigin)\
                  .extrude(platformBaseExtrude)
+        bb = platform.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,"%.3fin Wood Block"%(platformBaseHeight/25.4))
         platformTopExtrude = Base.Vector(0,0,Units.mm(Units.HOScale(12)))
         p1origin = origin.add(Base.Vector(
                                 0,
@@ -346,19 +437,25 @@ class UnderStation(object):
                                       stairShelterOrigin,
                                       Base.Vector(1,0,0))\
                .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
-        stairShelter = stairShelter.fuse(
-            Part.makePlane(
+        bb = stairShelter.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        ss1A = Part.makePlane(
                 self.__PlatformRoofHeight-self.__PlatformHeight,
                 stairwellcutLen+self.__PlatformStairWidth+(2*self.__GlassWallWidth),
                 stairShelterOrigin.add(Base.Vector(-self.__GlassWallWidth,
                                                    -self.__PlatformStairWidth,0)),
-                Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0)))
-        self.stair1Shelter = stairShelter.fuse(
-            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0))
+        stairShelter = stairShelter.fuse(ss1A)
+        bb = ss1A.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        ss1A = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
                                       self.__PlatformStairWidth,
                                       stairShelterOrigin.add(Base.Vector(stairwellcutLen+self.__PlatformStairWidth,0,0)),
                                       Base.Vector(1,0,0))\
-               .extrude(Base.Vector(self.__GlassWallWidth,0,0)))
+               .extrude(Base.Vector(self.__GlassWallWidth,0,0))
+        self.stair1Shelter = stairShelter.fuse(ss1A)
+        bb = ss1A.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         postSkip2 = (stairShelterOrigin.x-self.__GlassWallWidth,
                       stairShelterOrigin.x+stairwellcutLen+self.__PlatformStairWidth+self.__GlassWallWidth)
         stairShelterOrigin = Base.Vector(self.platform2StairOrigin.x+\
@@ -371,23 +468,32 @@ class UnderStation(object):
                                       stairShelterOrigin,
                                       Base.Vector(1,0,0))\
                .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
-        stairShelter = stairShelter.fuse(
-            Part.makePlane(
+        bb = stairShelter.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        ss1A = Part.makePlane(
                 self.__PlatformRoofHeight-self.__PlatformHeight,
                 stairwellcutLen+self.__PlatformStairWidth+(2*self.__GlassWallWidth),
                 stairShelterOrigin.add(Base.Vector(-self.__GlassWallWidth,
                                                    self.__GlassWallWidth,0)),
-                Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0)))
-        self.stair2Shelter = stairShelter.fuse(
-            Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
+                Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth,0))
+        stairShelter = stairShelter.fuse(ss1A)
+        bb = ss1A.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        ss1A = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
                                       self.__PlatformStairWidth,
                                       stairShelterOrigin.add(Base.Vector(stairwellcutLen+self.__PlatformStairWidth,0,0)),
                                       Base.Vector(1,0,0))\
-               .extrude(Base.Vector(self.__GlassWallWidth,0,0)))
+               .extrude(Base.Vector(self.__GlassWallWidth,0,0))
+        self.stair2Shelter = stairShelter.fuse(ss1A)
+        bb = ss1A.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        
         platform = Part.makePlane(self.__LongPlatformLength,
                                   platformBaseWidth,
                                   origin)\
                  .extrude(platformBaseExtrude)
+        bb = platform.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,"%.3fin Wood Block"%(platformBaseHeight/25.4))
         platform = platform.fuse(
             Part.makePlane(self.__LongPlatformLength,
                            self.__PlatformWidth,
@@ -437,6 +543,7 @@ class UnderStation(object):
             post2Orig = Base.Vector(postX,origin.y+self.__PlatformWidth/2,origin.z+self.__PlatformHeight)
             post2 = Part.makeCylinder(self.__PostDiameter/2,postLength,post2Orig)
             self.platform2 = self.platform2.fuse(post2)
+        self.AddPart("Walthers Cornerstone Part # 933-3175")
         wall = Part.makePlane(self.__PlatformRoofHeight+\
                                 self.__TotalStationHeight+\
                                 self.__StationUnderOffset+\
@@ -447,7 +554,9 @@ class UnderStation(object):
                                             self.__CombinedTrackAndPlatformWidth,
                                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
                               Base.Vector(0,1,0))\
-            .extrude(Base.Vector(0,self.__MainWallWidth))
+            .extrude(Base.Vector(0,self.__MainWallWidth,0))
+        bb = wall.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)") 
         wall = wall.cut(Part.makePlane(self.__TotalStationHeight,
                                        self.__ShortPlatformLength-(3*Elevator.ShaftLength),
                                        origin.add(
@@ -456,20 +565,26 @@ class UnderStation(object):
                                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
                               Base.Vector(0,1,0))\
             .extrude(Base.Vector(0,self.__MainWallWidth,0)))
-        wall = wall.fuse(Part.makePlane(self.__TotalStationHeight,
+        wall1 = Part.makePlane(self.__TotalStationHeight,
                                         self.__CombinedTrackAndPlatformWidth+\
                                             self.__MainWallWidth,
                                         origin.add(
                                             Base.Vector(0,self.__CombinedTrackAndPlatformWidth+self.__MainWallWidth,
                                                    -(self.__TotalStationHeight+self.__StationUnderOffset))),
                                         Base.Vector(1,0,0))\
-                            .extrude(Base.Vector(-self.__MainWallWidth,0,0)))
-        wall = wall.fuse(Part.makePlane(self.__TotalStationHeight,
+                            .extrude(Base.Vector(-self.__MainWallWidth,0,0))
+        wall = wall.fuse(wall1)
+        bb = wall1.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        wall1 = Part.makePlane(self.__TotalStationHeight,
                                         self.__CombinedTrackAndPlatformWidth-(2*self.__PlatformStairWidth),
                                         self.platform1StairOrigin,
                                         Base.Vector(1,0,0))\
-                              .extrude(Base.Vector(self.__MainWallWidth,0,0)))
-        wall = wall.fuse(Part.makePlane(self.__TotalStationHeight,
+                              .extrude(Base.Vector(self.__MainWallWidth,0,0))
+        wall = wall.fuse(wall1)
+        bb = wall1.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        wall1 = Part.makePlane(self.__TotalStationHeight,
                                         self.platform1StairOrigin.x-\
                                             elevator2Origin.x,
                                         elevator2Origin.add(
@@ -477,8 +592,11 @@ class UnderStation(object):
                                                         Elevator.ShaftLength,
                                                         0)),
                                         Base.Vector(0,1,0))\
-                        .extrude(Base.Vector(0,self.__MainWallWidth,0)))
-        wall = wall.fuse(Part.makePlane(self.__TotalStationHeight,
+                        .extrude(Base.Vector(0,self.__MainWallWidth,0))
+        wall = wall.fuse(wall1)
+        bb = wall1.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        wall1 = Part.makePlane(self.__TotalStationHeight,
                                         self.platform1StairOrigin.x-\
                                             elevator2Origin.x,
                                         elevator1Origin.add(
@@ -486,7 +604,10 @@ class UnderStation(object):
                                                         0,
                                                         0)),
                                         Base.Vector(0,1,0))\
-                        .extrude(Base.Vector(0,-self.__MainWallWidth,0)))
+                        .extrude(Base.Vector(0,-self.__MainWallWidth,0))
+        wall = wall.fuse(wall1)
+        bb = wall1.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
         ceiling = Part.makePlane((self.platform1StairOrigin.x-origin.x)+\
                                     (2*self.__MainWallWidth),
                                  self.__CombinedTrackAndPlatformWidth+\
@@ -497,6 +618,8 @@ class UnderStation(object):
                                         0,
                                         -self.__StationUnderOffset)))\
                      .extrude(Base.Vector(0,0,self.__MainWallWidth))
+        bb = ceiling.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         ceiling = ceiling.cut(self.platform1Elevator.shaft)
         ceiling = ceiling.cut(self.platform2Elevator.shaft)
         stairwaywall1 = Part.makePlane(self.__TotalStationHeight+\
@@ -505,15 +628,36 @@ class UnderStation(object):
                                        self.platform1StairOrigin.add(
                                         Base.Vector(0,0,0)),
                                        Base.Vector(0,1,0))\
-                .extrude(Base.Vector(0,-self.__MainWallWidth))
+                .extrude(Base.Vector(0,-self.__MainWallWidth,0))
+        bb = stairwaywall1.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
         stairwaywall2 = Part.makePlane(self.__TotalStationHeight+\
                                         self.__StationUnderOffset,
                                        platformStairLen,
                                        self.platform2StairOrigin.add(
                                         Base.Vector(0,self.__PlatformStairWidth,0)),
                                        Base.Vector(0,1,0))\
-                .extrude(Base.Vector(0,self.__MainWallWidth))
+                .extrude(Base.Vector(0,self.__MainWallWidth,0))
+        bb = stairwaywall1.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
         self.walls = wall.fuse(ceiling).fuse(stairwaywall1).fuse(stairwaywall2)
+        rearwall1 = Part.makePlane(self.__TotalStationHeight+
+                                    self.__StationUnderOffset+
+                                    self.__PlatformHeight+
+                                    self.__PlatformRoofHeight,
+                                   self.__LongPlatformLength+
+                                    (2*self.__MainWallWidth),
+                                   origin.add(Base.Vector(
+                                        -self.__MainWallWidth,
+                                        self.__TotalStationDepth+
+                                          self.__MainWallWidth,
+                                        -(self.__TotalStationHeight+
+                                          self.__StationUnderOffset))),
+                                   Base.Vector(0,1,0)
+                        ).extrude(Base.Vector(0,self.__MainWallWidth,0))
+        bb = rearwall1.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)") 
+        self.walls = self.walls.fuse(rearwall1)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -576,6 +720,7 @@ if __name__ == '__main__':
     doc = App.activeDocument()
     station = UnderStation("Station",Base.Vector(0,0,0))
     station.show(doc)
-    Gui.activeDocument().activeView().viewFront()
+    Gui.activeDocument().activeView().viewRear()
     Gui.SendMsgToActiveView("ViewFit")
-    
+    UnderStation.ListParts("UnderStationParts.csv")
+    UnderStation.ListCuts("UnderStationCuts.csv")    
