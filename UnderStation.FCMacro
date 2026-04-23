@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260421.1702>
+#  Last Modified : <260423.1232>
 #
 #  Description	
 #
@@ -272,10 +272,15 @@ class UnderStation(BOMHelper, PartsHelper):
         self.origin = origin
         self.streetElevator = Elevator(
             "StreetElevator",    
-            self.origin.add(Base.Vector(self.__LongPlatformLength-Elevator.ShaftLength-Units.HOScale(Units.mm(Units.inches(5))),
+            self.origin.add(Base.Vector(self.__LongPlatformLength-
+                                            self.__StreetStairWidth-
+                                            Elevator.ShaftLength-
+                                            9.85,
                             Units.mm(8.1)+self.__MainWallWidth,
                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
-            self.__TotalStationHeight+self.__StationUnderOffset+self.__CurbHeight)
+            self.__TotalStationHeight+
+                self.__StationUnderOffset+
+                self.__CurbHeight)
         self.AddPart("StreetElevator")
         streetStairLen = self.__TotalStairLength(self.__StreetStairTotalRise,
                                                  self.__StreetStairWidth)
@@ -548,9 +553,10 @@ class UnderStation(BOMHelper, PartsHelper):
                                 self.__TotalStationHeight+\
                                 self.__StationUnderOffset+\
                                 self.__PlatformRoofThickness,
-                              self.__LongPlatformLength,
+                              self.__LongPlatformLength+
+                                (2*self.__MainWallWidth),
                               origin.add(
-                                Base.Vector(0,
+                                Base.Vector(-self.__MainWallWidth,
                                             self.__CombinedTrackAndPlatformWidth,
                                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
                               Base.Vector(0,1,0))\
@@ -558,18 +564,25 @@ class UnderStation(BOMHelper, PartsHelper):
         bb = wall.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)") 
         wall = wall.cut(Part.makePlane(self.__TotalStationHeight,
-                                       self.__ShortPlatformLength-(3*Elevator.ShaftLength),
+                                       self.__ShortPlatformLength-
+                                        (3*Elevator.ShaftLength)+
+                                        self.__MainWallWidth,
                                        origin.add(
-                                Base.Vector(0,
+                                Base.Vector(-self.__MainWallWidth,
                                             self.__CombinedTrackAndPlatformWidth,
                                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
                               Base.Vector(0,1,0))\
             .extrude(Base.Vector(0,self.__MainWallWidth,0)))
         wall1 = Part.makePlane(self.__TotalStationHeight,
                                         self.__CombinedTrackAndPlatformWidth+\
-                                            self.__MainWallWidth,
+                                            (2*self.__MainWallWidth)+
+                                            Elevator.ShaftLength+
+                                            self.__StreetStairWidth+.11,
                                         origin.add(
-                                            Base.Vector(0,self.__CombinedTrackAndPlatformWidth+self.__MainWallWidth,
+                                            Base.Vector(0,self.__CombinedTrackAndPlatformWidth+
+                                                            (2*self.__MainWallWidth)+
+                                                            Elevator.ShaftLength+
+                                                            self.__StreetStairWidth,
                                                    -(self.__TotalStationHeight+self.__StationUnderOffset))),
                                         Base.Vector(1,0,0))\
                             .extrude(Base.Vector(-self.__MainWallWidth,0,0))
@@ -610,8 +623,7 @@ class UnderStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
         ceiling = Part.makePlane((self.platform1StairOrigin.x-origin.x)+\
                                     (2*self.__MainWallWidth),
-                                 self.__CombinedTrackAndPlatformWidth+\
-                                    self.__MainWallWidth,
+                                 self.__CombinedTrackAndPlatformWidth,
                                  origin.add(
                                     Base.Vector(
                                         -self.__MainWallWidth,
@@ -635,16 +647,15 @@ class UnderStation(BOMHelper, PartsHelper):
                                         self.__StationUnderOffset,
                                        platformStairLen,
                                        self.platform2StairOrigin.add(
-                                        Base.Vector(0,self.__PlatformStairWidth,0)),
+                                        Base.Vector(0,
+                                                    self.__PlatformStairWidth,0)),
                                        Base.Vector(0,1,0))\
                 .extrude(Base.Vector(0,self.__MainWallWidth,0))
         bb = stairwaywall1.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
         self.walls = wall.fuse(ceiling).fuse(stairwaywall1).fuse(stairwaywall2)
-        rearwall1 = Part.makePlane(self.__TotalStationHeight+
-                                    self.__StationUnderOffset+
-                                    self.__PlatformHeight+
-                                    self.__PlatformRoofHeight,
+        rearHeight = self.streetElevator.shaft.BoundBox.ZLength
+        rearwall1 = Part.makePlane(rearHeight,
                                    self.__LongPlatformLength+
                                     (2*self.__MainWallWidth),
                                    origin.add(Base.Vector(
@@ -658,6 +669,78 @@ class UnderStation(BOMHelper, PartsHelper):
         bb = rearwall1.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)") 
         self.walls = self.walls.fuse(rearwall1)
+        rearwall1 = Part.makePlane(rearHeight,
+                                   self.__LongPlatformLength-
+                                    (3*self.__StreetStairWidth)+
+                                    Elevator.ShaftWidth,
+                                   origin.add(Base.Vector(
+                                        self.__StreetStairWidth,
+                                        self.__TotalStationDepth-
+                                          self.__StreetStairWidth,
+                                        -(self.__TotalStationHeight+
+                                          self.__StationUnderOffset))),
+                                   Base.Vector(0,1,0)
+                        ).extrude(Base.Vector(0,self.__MainWallWidth,0))
+        bb = rearwall1.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)") 
+        self.walls = self.walls.fuse(rearwall1)
+        entryFloor1 = Part.makePlane(58.79,Elevator.ShaftLength+
+                                            self.__MainWallWidth,
+                                     origin.add(Base.Vector(
+                                        500.01,
+                                        207.49,
+                                        self.__CurbHeight-
+                                         self.__MainWallWidth))
+                  ).extrude(Base.Vector(0,0,self.__MainWallWidth))
+        bb = entryFloor1.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        self.walls = self.walls.fuse(entryFloor1)
+        entryFloor1 = Part.makePlane(12.59,self.__StreetStairWidth,
+                                     origin.add(Base.Vector(
+                                        546.21,241.54,
+                                        self.__CurbHeight-
+                                            self.__MainWallWidth))
+                  ).extrude(Base.Vector(0,0,self.__MainWallWidth)) 
+        bb = entryFloor1.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        self.walls = self.walls.fuse(entryFloor1) 
+        entryWall1 = Part.makePlane(51.38,
+                                    Elevator.ShaftLength+
+                                        (1*self.__MainWallWidth)+
+                                        self.__StreetStairWidth,
+                                    origin.add(Base.Vector(558.8,283.58,0)),
+                                    Base.Vector(1,0,0)
+                   ).extrude(Base.Vector(self.__MainWallWidth,0,0))
+        bb = entryWall1.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        self.walls = self.walls.fuse(entryWall1)
+        roof = Part.makePlane(self.__LongPlatformLength+
+                                    (2*self.__MainWallWidth),
+                              Elevator.ShaftLength+
+                                        (2*self.__MainWallWidth)+
+                                        self.__StreetStairWidth,
+                              origin.add(Base.Vector(-self.__MainWallWidth,
+                                                     207.49,
+                                                     51.38))
+                    ).extrude(Base.Vector(0,0,self.__MainWallWidth))
+        bb = roof.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        self.walls = self.walls.fuse(roof)
+        backwall = Part.makePlane(self.__StationUnderOffset+51.38,
+                                  Elevator.ShaftLength+
+                                    (1*self.__MainWallWidth)+
+                                    self.__StreetStairWidth,
+                                  origin.add(Base.Vector(-self.__MainWallWidth,
+                                                         self.__CombinedTrackAndPlatformWidth+\
+                                            (2*self.__MainWallWidth)+
+                                            Elevator.ShaftLength+
+                                            self.__StreetStairWidth+.11,
+                                            -self.__StationUnderOffset)),
+                                  Base.Vector(1,0,0)
+                     ).extrude(Base.Vector(self.__MainWallWidth,0,0))
+        bb = backwall.BoundBox
+        self.AddPiece(bb.ZLength,bb.YLength,".080 Styreen (SSS-10824)")
+        self.walls = self.walls.fuse(backwall)
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
@@ -720,7 +803,7 @@ if __name__ == '__main__':
     doc = App.activeDocument()
     station = UnderStation("Station",Base.Vector(0,0,0))
     station.show(doc)
-    Gui.activeDocument().activeView().viewRear()
+    Gui.activeDocument().activeView().viewTop()
     Gui.SendMsgToActiveView("ViewFit")
     UnderStation.ListParts("UnderStationParts.csv")
     UnderStation.ListCuts("UnderStationCuts.csv")    
