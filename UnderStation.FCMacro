@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260423.1232>
+#  Last Modified : <260430.0907>
 #
 #  Description	
 #
@@ -108,11 +108,11 @@ class BOMHelper(object):
 class PartsHelper(object):
     __BOP = dict()
     @classmethod
-    def AddPart(cls,part):
+    def AddPart(cls,part,count=1):
         if part in cls.__BOP:
-            cls.__BOP[part] += 1
+            cls.__BOP[part] += count
         else:
-            cls.__BOP[part] = 1
+            cls.__BOP[part] = count
     @classmethod
     def ListParts(cls,filename):
         parts = list(cls.__BOP.keys())
@@ -741,6 +741,9 @@ class UnderStation(BOMHelper, PartsHelper):
         bb = backwall.BoundBox
         self.AddPiece(bb.ZLength,bb.YLength,".080 Styreen (SSS-10824)")
         self.walls = self.walls.fuse(backwall)
+        self.AddPart("Tichy Train Group #8195 Single Glass Door",4)
+        self.AddPart("Tichy Train Group #8198 Double Glass Door",3)
+        self.AddPart("Tichy Train Group #8193 Strap Railing") 
     def show(self,doc=None):
         if doc==None:
             doc = App.activeDocument()
