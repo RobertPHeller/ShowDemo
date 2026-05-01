@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260430.0907>
+#  Last Modified : <260501.1605>
 #
 #  Description	
 #
@@ -265,6 +265,24 @@ class UnderStation(BOMHelper, PartsHelper):
                 x = x+tread
         self.AddPart("Stairs_%.4fx%.4f"%(width,height))
         return stair
+    __DoorCutHeight = Units.mm(.98)
+    __SingleDoorCutWidth = Units.mm(.46)
+    __DoubleDoorCutWidth = Units.mm(.875)
+    def __doubleDoorCut(self,origin,DeltaX):
+        doorCut = Part.makePlane(self.__DoorCutHeight,self.__DoubleDoorCutWidth,
+                                 origin.add(
+                                    Base.Vector(0,self.__DoubleDoorCutWidth,0)),
+                                 Base.Vector(1,0,0)
+               ).extrude(Base.Vector(DeltaX,0,0))
+        return doorCut
+    def __singleDoorCut(self,origin,DeltaX):
+        doorCut = Part.makePlane(self.__DoorCutHeight,self.__SingleDoorCutWidth,
+                                 origin.add(
+                                    Base.Vector(0,self.__SingleDoorCutWidth,0)),
+                                 Base.Vector(1,0,0)
+               ).extrude(Base.Vector(DeltaX,0,0))
+        self.doorCut = doorCut
+        return doorCut
     def __init__(self,name,origin):
         self.name = name
         if not isinstance(origin,Base.Vector):
@@ -348,6 +366,11 @@ class UnderStation(BOMHelper, PartsHelper):
                                          Base.Vector(1,0,0))\
               .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
         bb = elevatorShelter.BoundBox
+        elevatorShelterDoorOrigin = Base.Vector(bb.XMin,
+                                        bb.YMin+
+                                            ((Elevator.ShaftLength-
+                                              self.__SingleDoorCutWidth)/2),
+                                        bb.ZMin)
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         e1sA = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
                            self.__PlatformStairWidth,
@@ -357,9 +380,12 @@ class UnderStation(BOMHelper, PartsHelper):
                                 -Elevator.ShaftLength,
                                 0)),
                            Base.Vector(0,1,0)).extrude(Base.Vector(0,self.__GlassWallWidth))
-        self.elevator1Shelter = elevatorShelter.fuse(e1sA)
+        self.elevator1Shelter = elevatorShelter.fuse(e1sA).cut(
+            self.__singleDoorCut(elevatorShelterDoorOrigin,
+                                 self.__GlassWallWidth))
         bb = e1sA.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        self.AddPart("Tichy Train Group #8195 Single Glass Door")
         postSkip1 = (elevator1Origin.x,elevator1Origin.x+Elevator.ShaftWidth+self.__PlatformStairWidth)
         elevator2Origin = self.origin.add(Base.Vector(self.__ShortPlatformLength-(3*Elevator.ShaftLength),
                                         0,
@@ -383,6 +409,11 @@ class UnderStation(BOMHelper, PartsHelper):
                                          Base.Vector(1,0,0))\
               .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
         bb = elevatorShelter.BoundBox
+        elevatorShelterDoorOrigin = Base.Vector(bb.XMin,
+                                        bb.YMin+
+                                            ((Elevator.ShaftLength-
+                                              self.__SingleDoorCutWidth)/2),
+                                        bb.ZMin)
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         e2sA = Part.makePlane(self.__PlatformRoofHeight-self.__PlatformHeight,
                            self.__PlatformStairWidth,
@@ -392,9 +423,12 @@ class UnderStation(BOMHelper, PartsHelper):
                                 0,
                                 0)),
                            Base.Vector(0,1,0)).extrude(Base.Vector(0,-self.__GlassWallWidth))
-        self.elevator2Shelter = elevatorShelter.fuse(e2sA)
+        self.elevator2Shelter = elevatorShelter.fuse(e2sA).cut(
+            self.__singleDoorCut(elevatorShelterDoorOrigin,
+                                 self.__GlassWallWidth))
         bb = e2sA.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        self.AddPart("Tichy Train Group #8195 Single Glass Door")
         platformBaseHeight = self.__PlatformHeight-Units.mm(Units.HOScale(12))
         platformBaseExtrude = Base.Vector(0,0,platformBaseHeight)
         platformBaseWidth = self.__PlatformWidth-Units.mm(Units.HOScale(12))
@@ -741,7 +775,7 @@ class UnderStation(BOMHelper, PartsHelper):
         bb = backwall.BoundBox
         self.AddPiece(bb.ZLength,bb.YLength,".080 Styreen (SSS-10824)")
         self.walls = self.walls.fuse(backwall)
-        self.AddPart("Tichy Train Group #8195 Single Glass Door",4)
+        #self.AddPart("Tichy Train Group #8195 Single Glass Door",4)
         self.AddPart("Tichy Train Group #8198 Double Glass Door",3)
         self.AddPart("Tichy Train Group #8193 Strap Railing") 
     def show(self,doc=None):
