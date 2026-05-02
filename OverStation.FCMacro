@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260502.0722>
+#  Last Modified : <260502.0952>
 #
 #  Description	
 #
@@ -227,6 +227,14 @@ class OverStation(BOMHelper, PartsHelper):
     def __PlatformStairTotalRise(self):
         return self.__PlatformRoofHeight-self.__PlatformHeight+self.__PlatformRoofThickness
     __ParapetWallHeight = Units.mm(Units.HOScale(18))
+    @property
+    def __KneeWallHeight(self):
+        return(Units.mm(Units.HOScale(18))+self.__PlatformRoofThickness)
+    __WindowHeight = Units.mm(Units.HOScale(Units.inches(8.5)))
+    __WindowWidth  = Units.mm(Units.HOScale(Units.inches(6.5)))
+    __WindowPostWidth = Units.mm(Units.HOScale(Units.inches(1)))
+    __VestibleWidth   = Units.mm(Units.HOScale(Units.inches(10)))
+    __VestibleHeight  = Units.mm(Units.HOScale(Units.inches(9)))
     __StairsColor  = tuple([0xaa/255.0,0xaa/255.0,0xaa/255.0])
     __FloorColor   = (.5,.5,.5)
     __BrickWallColor = (139.0/255.0,  26.0/255.0,  26.0/255.0)
@@ -296,6 +304,7 @@ class OverStation(BOMHelper, PartsHelper):
                                     Base.Vector(0,self.__DoubleDoorCutWidth,0)),
                                  Base.Vector(1,0,0)
                ).extrude(Base.Vector(DeltaX,0,0))
+        self.doorCut = doorCut
         return doorCut
     def __singleDoorCut(self,origin,DeltaX):
         doorCut = Part.makePlane(self.__DoorCutHeight,self.__SingleDoorCutWidth,
@@ -756,6 +765,13 @@ class OverStation(BOMHelper, PartsHelper):
                                Base.Vector(1,0,0)
                    ).extrude(Base.Vector(self.__GlassWallWidth,0,0))
         bb = wall1.BoundBox
+        doorOrigin = Base.Vector(bb.XMin,
+                                 bb.YMin+
+                                    ((bb.YLength-self.__DoubleDoorCutWidth)/2),
+                                 bb.ZMin)
+        wall1 = wall1.cut(self.__doubleDoorCut(doorOrigin,
+                                               self.__GlassWallWidth))
+        self.AddPart("Tichy Train Group #8198 Double Glass Door")
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         wall = wall.fuse(wall1)
         wall1 = Part.makePlane(self.__StationHeight,
@@ -769,6 +785,13 @@ class OverStation(BOMHelper, PartsHelper):
                                Base.Vector(1,0,0)
                    ).extrude(Base.Vector(self.__GlassWallWidth,0,0))
         bb = wall1.BoundBox
+        doorOrigin = Base.Vector(bb.XMin,
+                                 bb.YMin+
+                                    ((bb.YLength-self.__DoubleDoorCutWidth)/2),
+                                 bb.ZMin)
+        wall1 = wall1.cut(self.__doubleDoorCut(doorOrigin,
+                                               self.__GlassWallWidth))
+        self.AddPart("Tichy Train Group #8198 Double Glass Door")
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         wall = wall.fuse(wall1)
         self.wall = wall
@@ -799,6 +822,61 @@ class OverStation(BOMHelper, PartsHelper):
                   ).extrude(Base.Vector(self.__PlastructPS_97Thick,0,0))
         bb = leftwall.BoundBox
         self.AddPiece(bb.YLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
+        vestibleOrigin = Base.Vector(bb.XMin,
+                                     bb.YMin+
+                                        ((bb.YLength-self.__VestibleWidth)/2)+
+                                        self.__VestibleWidth,
+                                     bb.ZMin)
+        leftwall = leftwall.cut(
+            Part.makePlane(self.__VestibleHeight+self.__PlatformRoofThickness,
+                           self.__VestibleWidth,
+                           vestibleOrigin,
+                           Base.Vector(1,0,0)).extrude(
+                                Base.Vector(self.__PlastructPS_97Thick,0,0)))
+        yAdjust = Base.Vector(0,self.__WindowWidth,0)
+        windowOrigin = Base.Vector(bb.XMin,
+                                   bb.YMin+self.__PlastructPS_97Thick+
+                                    (self.__WindowPostWidth/2),
+                                   bb.ZMin+self.__KneeWallHeight+
+                                    self.__PlatformRoofThickness)
+        leftwall = leftwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        leftwall = leftwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__VestibleWidth+
+                                          self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        leftwall = leftwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        leftwall = leftwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
         rightwall = Part.makePlane(self.__StationHeight+
                                     self.__PlatformRoofThickness+
                                     self.__ParapetWallHeight,
@@ -812,9 +890,62 @@ class OverStation(BOMHelper, PartsHelper):
                                   Base.Vector(1,0,0)
                   ).extrude(Base.Vector(self.__PlastructPS_97Thick,0,0))
         bb = rightwall.BoundBox
+        vestibleOrigin = Base.Vector(bb.XMin,
+                                     bb.YMin+
+                                        ((bb.YLength-self.__VestibleWidth)/2)+
+                                        self.__VestibleWidth,
+                                     bb.ZMin)
+        rightwall = rightwall.cut(
+            Part.makePlane(self.__VestibleHeight+self.__PlatformRoofThickness,
+                           self.__VestibleWidth,
+                           vestibleOrigin,
+                           Base.Vector(1,0,0)).extrude(
+                                Base.Vector(self.__PlastructPS_97Thick,0,0)))
+        windowOrigin = Base.Vector(bb.XMin,
+                                   bb.YMin+self.__PlastructPS_97Thick+
+                                    (self.__WindowPostWidth/2),
+                                   bb.ZMin+self.__KneeWallHeight+
+                                    self.__PlatformRoofThickness)
+        rightwall = rightwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        rightwall = rightwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__VestibleWidth+
+                                          self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        rightwall = rightwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        rightwall = rightwall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__PlastructPS_97Thick,
+                                                0,0)))
         self.AddPiece(bb.YLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         self.outerwall = backwall.fuse(leftwall).fuse(rightwall)
-        #self.AddPart("Tichy Train Group #8195 Single Glass Door",6)
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
         if doc==None:
