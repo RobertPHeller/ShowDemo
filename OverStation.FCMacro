@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260501.1638>
+#  Last Modified : <260502.0722>
 #
 #  Description	
 #
@@ -542,6 +542,7 @@ class OverStation(BOMHelper, PartsHelper):
         self.stair2Shelter = stairShelter.fuse(ss1A).cut(
             self.__singleDoorCut(stairShelterDoorOrigin,
                                  self.__GlassWallWidth))
+        self.AddPart("Tichy Train Group #8195 Single Glass Door")
         platform = Part.makePlane(self.__LongPlatformLength,
                                   platformBaseWidth,
                                   origin)\
@@ -643,7 +644,20 @@ class OverStation(BOMHelper, PartsHelper):
                 ).extrude(Base.Vector(self.__GlassWallWidth,0,0))
         bb = wall1.BoundBox
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
-        wall = wall.fuse(wall1)
+        doorOrigin1 = Base.Vector(bb.XMin,
+                                  bb.YMin+
+                                    ((self.__PlatformStairWidth-self.__SingleDoorCutWidth)/2),
+                                  bb.ZMin)
+        doorOrigin2 = Base.Vector(bb.XMin,
+                                  bb.YMin+
+                                    (bb.YLength-self.__PlatformStairWidth)+
+                                    ((self.__PlatformStairWidth-self.__SingleDoorCutWidth)/2),
+                                  bb.ZMin)
+        wall = wall.fuse(wall1).cut(
+            self.__singleDoorCut(doorOrigin1,self.__GlassWallWidth)).cut(
+                self.__singleDoorCut(doorOrigin2,self.__GlassWallWidth))
+        self.AddPart("Tichy Train Group #8195 Single Glass Door",2)
+
         wall1 = Part.makePlane(self.__StationHeight,
                                self.__TotalStairLength(
                                     self.__PlatformStairTotalRise,
