@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260502.0952>
+#  Last Modified : <260502.1015>
 #
 #  Description	
 #
@@ -235,6 +235,7 @@ class OverStation(BOMHelper, PartsHelper):
     __WindowPostWidth = Units.mm(Units.HOScale(Units.inches(1)))
     __VestibleWidth   = Units.mm(Units.HOScale(Units.inches(10)))
     __VestibleHeight  = Units.mm(Units.HOScale(Units.inches(9)))
+    __VestibleLength  = Units.mm(Units.HOScale(Units.inches(6)))
     __StairsColor  = tuple([0xaa/255.0,0xaa/255.0,0xaa/255.0])
     __FloorColor   = (.5,.5,.5)
     __BrickWallColor = (139.0/255.0,  26.0/255.0,  26.0/255.0)
@@ -611,8 +612,8 @@ class OverStation(BOMHelper, PartsHelper):
                                                     self.__PlatformRoofThickness-
                                                     self.__PlatformHeight))
                ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
-        bb = floor1.BoundBox
-        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        ##bb = floor1.BoundBox
+        ##self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         stationOrigin = elevator2Origin.add(
                             Base.Vector(self.__MainStationXOffset,
                                         self.__CombinedTrackAndPlatformWidth,
@@ -624,8 +625,8 @@ class OverStation(BOMHelper, PartsHelper):
                                 stationOrigin
                ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
         self.floor = floor1.fuse(floor2)
-        bb = floor2.BoundBox
-        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        ##bb = floor2.BoundBox
+        ##self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         wallLength_y = self.__CombinedTrackAndPlatformWidth-(2*Elevator.ShaftLength)
         wallZOff = self.__PlatformRoofHeight+\
                         self.__PlatformRoofThickness-\
@@ -824,15 +825,25 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.YLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         vestibleOrigin = Base.Vector(bb.XMin,
                                      bb.YMin+
-                                        ((bb.YLength-self.__VestibleWidth)/2)+
-                                        self.__VestibleWidth,
+                                        ((bb.YLength-self.__VestibleWidth)/2),
                                      bb.ZMin)
+        vestibleCutOrigin = vestibleOrigin.add(
+            Base.Vector(0,self.__VestibleWidth,0))
         leftwall = leftwall.cut(
             Part.makePlane(self.__VestibleHeight+self.__PlatformRoofThickness,
                            self.__VestibleWidth,
-                           vestibleOrigin,
+                           vestibleCutOrigin,
                            Base.Vector(1,0,0)).extrude(
                                 Base.Vector(self.__PlastructPS_97Thick,0,0)))
+        vestibleFloorOrigin = vestibleOrigin.add(
+            Base.Vector(-self.__VestibleLength,0,0))
+        vestibleFloor = Part.makePlane(self.__VestibleLength+
+                                        self.__PlastructPS_97Thick,
+                                       self.__VestibleWidth,
+                                       vestibleFloorOrigin).extrude(
+                                        Base.Vector(0,0,
+                                                    self.__PlatformRoofThickness))
+        self.floor = self.floor.fuse(vestibleFloor)
         yAdjust = Base.Vector(0,self.__WindowWidth,0)
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
@@ -892,15 +903,24 @@ class OverStation(BOMHelper, PartsHelper):
         bb = rightwall.BoundBox
         vestibleOrigin = Base.Vector(bb.XMin,
                                      bb.YMin+
-                                        ((bb.YLength-self.__VestibleWidth)/2)+
-                                        self.__VestibleWidth,
+                                        ((bb.YLength-self.__VestibleWidth)/2),
                                      bb.ZMin)
+        vestibleCutOrigin = vestibleOrigin.add(
+            Base.Vector(0,self.__VestibleWidth,0))
         rightwall = rightwall.cut(
             Part.makePlane(self.__VestibleHeight+self.__PlatformRoofThickness,
                            self.__VestibleWidth,
-                           vestibleOrigin,
+                           vestibleCutOrigin,
                            Base.Vector(1,0,0)).extrude(
                                 Base.Vector(self.__PlastructPS_97Thick,0,0)))
+        vestibleFloorOrigin = vestibleOrigin
+        vestibleFloor = Part.makePlane(self.__VestibleLength+
+                                        self.__PlastructPS_97Thick,
+                                       self.__VestibleWidth,
+                                       vestibleFloorOrigin).extrude(
+                                        Base.Vector(0,0,
+                                                    self.__PlatformRoofThickness))
+        self.floor = self.floor.fuse(vestibleFloor)
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
                                     (self.__WindowPostWidth/2),
@@ -946,6 +966,8 @@ class OverStation(BOMHelper, PartsHelper):
                                                 0,0)))
         self.AddPiece(bb.YLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         self.outerwall = backwall.fuse(leftwall).fuse(rightwall)
+        bb = self.floor.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
         if doc==None:
@@ -1012,7 +1034,7 @@ if __name__ == '__main__':
     doc = App.activeDocument()
     station = OverStation("Station",Base.Vector(0,0,0))
     station.show(doc)
-    Gui.activeDocument().activeView().viewFront()
+    Gui.activeDocument().activeView().viewTop()
     Gui.SendMsgToActiveView("ViewFit")
     OverStation.ListParts("OverStationParts.csv")
     OverStation.ListCuts("OverStationCuts.csv")    
