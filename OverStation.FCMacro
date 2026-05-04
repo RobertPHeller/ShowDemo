@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260503.2041>
+#  Last Modified : <260503.2100>
 #
 #  Description	
 #
@@ -1228,9 +1228,9 @@ class OverStation(BOMHelper, PartsHelper):
         #y6uhxccccccc vbobj.ViewObject.ShapeColor=(1.0,0.0,0.0)
 
 if __name__ == '__main__':
-    if "UnderStation" in App.listDocuments().keys():
-        App.closeDocument("UnderStation")
-    doc = App.newDocument("UnderStation")
+    if "OverStation" in App.listDocuments().keys():
+        App.closeDocument("OverStation")
+    doc = App.newDocument("OverStation")
     doc = App.activeDocument()
     station = OverStation("Station",Base.Vector(0,0,0))
     station.show(doc)
