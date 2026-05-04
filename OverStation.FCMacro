@@ -1225,7 +1225,7 @@ class OverStation(BOMHelper, PartsHelper):
         obj.ViewObject.ShapeColor=self.__InnerWallColor
         #obj = doc.addObject("Part::Feature",self.name+"_doorCut")
         #obj.Shape = self.doorCut
-        #y6uhxccccccc vbobj.ViewObject.ShapeColor=(1.0,0.0,0.0)
+        #obj.ViewObject.ShapeColor=(1.0,0.0,0.0)
 
 if __name__ == '__main__':
     if "OverStation" in App.listDocuments().keys():
