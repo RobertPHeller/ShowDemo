@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260503.1636>
+#  Last Modified : <260503.2041>
 #
 #  Description	
 #
@@ -961,11 +961,13 @@ class OverStation(BOMHelper, PartsHelper):
         vestibleOuterWallLeft = vestibleOuterWallLeft.fuse(vestibleOuterWall)
         vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
                                             self.__ParapetWallHeight,
-                                           self.__VestibleWidth,
+                                           self.__VestibleWidth+
+                                            (2*self.__PlastructPS_97Thick),
                                            vestibleFloorOrigin.add(
                                             Base.Vector(
                                                 -self.__PlastructPS_97Thick,
-                                                self.__VestibleWidth,
+                                                self.__VestibleWidth+
+                                                    self.__PlastructPS_97Thick,
                                                 0)),
                                            Base.Vector(1,0,0)).extrude(
                                             Base.Vector(self.__PlastructPS_97Thick,0,0))
@@ -1101,9 +1103,61 @@ class OverStation(BOMHelper, PartsHelper):
                                  self.__MainWallWidth))
         self.AddPart("Tichy Train Group #8198 Double Glass Door")
         self.vestibleInnerWallRight = self.vestibleInnerWallRight.fuse(vestibleInnerWall)
+        vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
+                                            self.__ParapetWallHeight,
+                                           self.__VestibleLength+
+                                            self.__PlastructPS_97Thick,
+                                           vestibleFloorOrigin.add(
+                                            Base.Vector(
+                                                self.__PlastructPS_97Thick,
+                                                -self.__PlastructPS_97Thick,
+                                                0)),
+                                           Base.Vector(0,1,0)).extrude(
+                                            Base.Vector(0,self.__PlastructPS_97Thick,0))
+        bb = vestibleOuterWall.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
+        vestibleOuterWallRight = vestibleOuterWall
+        vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
+                                            self.__ParapetWallHeight,
+                                           self.__VestibleLength+
+                                            self.__PlastructPS_97Thick,
+                                           vestibleFloorOrigin.add(
+                                            Base.Vector(
+                                                self.__PlastructPS_97Thick,
+                                                self.__VestibleWidth,
+                                                0)),
+                                           Base.Vector(0,1,0)).extrude(
+                                            Base.Vector(0,self.__PlastructPS_97Thick,0))
+        bb = vestibleOuterWall.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
+        vestibleOuterWallRight = vestibleOuterWallRight.fuse(vestibleOuterWall)
+        vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
+                                            self.__ParapetWallHeight,
+                                           self.__VestibleWidth+
+                                            (2*self.__PlastructPS_97Thick),
+                                           vestibleFloorOrigin.add(
+                                            Base.Vector(
+                                                self.__VestibleLength+
+                                                    self.__PlastructPS_97Thick,
+                                                self.__VestibleWidth+
+                                                    self.__PlastructPS_97Thick,
+                                                0)),
+                                           Base.Vector(1,0,0)).extrude(
+                                            Base.Vector(self.__PlastructPS_97Thick,0,0))
+        bb = vestibleOuterWall.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
+        vestibleOuterWall = vestibleOuterWall.cut(
+            self.__doubleDoorCut(Base.Vector(bb.XMin,
+                                             bb.YMin+.44+
+                                                ((bb.YLength-self.__DoubleDoorCutWidth)/2),
+                                             bb.ZMin+
+                                                self.__PlatformRoofThickness),
+                                 self.__PlastructPS_97Thick))
+        vestibleOuterWallRight = vestibleOuterWallRight.fuse(vestibleOuterWall)
         self.outerwall = backwall.fuse(leftwall
             ).fuse(rightwall
-                ).fuse(vestibleOuterWallLeft)
+                ).fuse(vestibleOuterWallLeft
+                    ).fuse(vestibleOuterWallRight)
         bb = self.floor.BoundBox
         self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         self.AddPart("Tichy Train Group #8193 Strap Railing")
