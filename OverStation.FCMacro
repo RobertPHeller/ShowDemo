@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260504.1927>
+#  Last Modified : <260505.0826>
 #
 #  Description	
 #
@@ -1340,7 +1340,8 @@ class OverStation(BOMHelper, PartsHelper):
                                                 self.__PlatformStairWidth)+
                                                       self.__GlassWallWidth,
                                                     0,
-                                                    wallZOff-self.__PlatformRoofThickness)),
+                                                    wallZOff-
+                                                        self.__PlatformRoofThickness)),
                                     Base.Vector(1,0,0)).extrude(
                                         Base.Vector(self.__PlastructPS_97Thick,
                                                     0,0))
@@ -1359,6 +1360,26 @@ class OverStation(BOMHelper, PartsHelper):
                            Base.Vector(1,0,0)).extrude(
                             Base.Vector(self.__PlastructPS_97Thick,0,0)))
         rightbridgewall = temp
+        temp = Part.makePlane(self.__StationHeight+
+                                self.__PlatformRoofThickness+
+                                self.__ParapetWallHeight,
+                              self.__TotalStairLength(
+                                self.__PlatformStairTotalRise,
+                                self.__PlatformStairWidth)+
+                                    self.__GlassWallWidth+
+                                    self.__PlastructPS_97Thick,
+                              Base.Vector(0,0,self.__PlatformRoofThickness)),
+                              Base.Vector(0,1,0)).extrude(
+                                Base.Vector(0,self.__PlastructPS_97Thick,0))
+        bb = temp.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
+        windowOrigin = Base.Vector(bb.XMin,
+                                   bb.YMin+self.__PlastructPS_97Thick+
+                                    (self.__WindowPostWidth/2),
+                                   bb.ZMin+self.__KneeWallHeight+
+                                    self.__PlatformRoofThickness)
+        
+        rightbridgewall = rightbridgewall.fuse(temp)
         self.outerwall = backwall.fuse(leftwall
             ).fuse(rightwall
                 ).fuse(vestibleOuterWallLeft
