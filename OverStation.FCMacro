@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260505.1652>
+#  Last Modified : <260505.1739>
 #
 #  Description	
 #
@@ -613,8 +613,8 @@ class OverStation(BOMHelper, PartsHelper):
                                                     self.__PlatformRoofThickness-
                                                     self.__PlatformHeight))
                ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
-        ##bb = floor1.BoundBox
-        ##self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        bb = floor1.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         stationOrigin = elevator2Origin.add(
                             Base.Vector(self.__MainStationXOffset,
                                         self.__CombinedTrackAndPlatformWidth,
@@ -669,17 +669,6 @@ class OverStation(BOMHelper, PartsHelper):
                 self.__singleDoorCut(doorOrigin2,self.__GlassWallWidth))
         self.AddPart("Tichy Train Group #8195 Single Glass Door",2)
 
-        wall1 = Part.makePlane(self.__StationHeight,
-                               self.__TotalStairLength(
-                                    self.__PlatformStairTotalRise,
-                                    self.__PlatformStairWidth)+5.92,
-                               self.stairShelterOrigin1.add(
-                                Base.Vector(0,0,wallZOff)),
-                               Base.Vector(0,1,0)
-                ).extrude(Base.Vector(0,self.__GlassWallWidth,0))
-        bb = wall1.BoundBox
-        self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
-        wall = wall.fuse(wall1)
         wall1 = Part.makePlane(self.__StationHeight+
                                     self.__PlatformRoofThickness,
                                self.__TotalStairLength(
@@ -738,18 +727,7 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         wall = wall.fuse(wall1) 
         wall1 = Part.makePlane(self.__StationHeight,
-                               (182.85-147.81)+Elevator.ShaftWidth+
-                                    self.__GlassWallWidth,
-                               stationOrigin.add(
-                                Base.Vector(0,0,self.__PlatformRoofThickness)),
-                               Base.Vector(0,1,0)
-                    ).extrude(Base.Vector(0,self.__GlassWallWidth,0))
-        bb = wall1.BoundBox 
-        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
-        wall = wall.fuse(wall1)
-        wall1 = Part.makePlane(self.__StationHeight,
-                               self.__MainStationLength-
-                                self.__GlassWallWidth,
+                               self.__MainStationLength,
                                stationOrigin.add(
                                 Base.Vector(0,self.__MainStationLength,
                                             self.__PlatformRoofThickness)),
@@ -766,8 +744,7 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         wall = wall.fuse(wall1)
         wall1 = Part.makePlane(self.__StationHeight,
-                               self.__MainStationLength-
-                                self.__GlassWallWidth,
+                               self.__MainStationLength,
                                stationOrigin.add(
                                 Base.Vector(self.__MainStationWidth-
                                                 self.__GlassWallWidth,
@@ -1667,7 +1644,8 @@ class OverStation(BOMHelper, PartsHelper):
                                     (2*self.__MainWallWidth),
                                   stationOrigin.add(
                                     Base.Vector(self.__MainStationWidth-
-                                                    self.__MainWallWidth,
+                                                    self.__MainWallWidth-
+                                                    self.__GlassWallWidth,
                                                 self.__MainStationLength-
                                                     self.__MainWallWidth,
                                                 self.__PlatformRoofThickness)),
@@ -1733,9 +1711,32 @@ class OverStation(BOMHelper, PartsHelper):
                            Base.Vector(1,0,0)).extrude(
                                     Base.Vector(self.__MainWallWidth,
                                                 0,0)))
-        
+        innerfrontwall = Part.makePlane(self.__StationHeight,
+                                        self.__MainStationWidth-
+                                            (2*self.__GlassWallWidth),
+                                        stationOrigin.add(
+                                            Base.Vector(self.__GlassWallWidth,
+                                                        0,
+                                                        self.__PlatformRoofThickness)),
+                                        Base.Vector(0,1,0)
+               ).extrude(Base.Vector(0,self.__MainWallWidth,0))
+        bb = innerfrontwall.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        bridgePortalOrigin = Base.Vector(bb.XMin+60.32+self.__MainWallWidth,
+                                         bb.YMin,
+                                         bb.ZMin)
+        innerfrontwall = innerfrontwall.cut(
+            Part.makePlane(self.__VestibleHeight,
+                           self.__BridgeWidth-
+                            (2*self.__GlassWallWidth)-
+                            (2*self.__MainWallWidth),
+                           bridgePortalOrigin,
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__MainWallWidth,0)))
+
         self.innerwall = innerbackwall.fuse(innerleftwall
-                        ).fuse(innerrightwall)
+                        ).fuse(innerrightwall
+                            ).fuse(innerfrontwall)
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
         if doc==None:
