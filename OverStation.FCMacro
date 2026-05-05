@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260505.0826>
+#  Last Modified : <260505.0846>
 #
 #  Description	
 #
@@ -1366,19 +1366,59 @@ class OverStation(BOMHelper, PartsHelper):
                               self.__TotalStairLength(
                                 self.__PlatformStairTotalRise,
                                 self.__PlatformStairWidth)+
-                                    self.__GlassWallWidth+
                                     self.__PlastructPS_97Thick,
-                              Base.Vector(0,0,self.__PlatformRoofThickness)),
+                              self.stairShelterOrigin1.add(
+                                Base.Vector(self.__GlassWallWidth,
+                                            -(self.__PlatformStairWidth+
+                                              self.__PlastructPS_97Thick),
+                                            wallZOff-
+                                                self.__PlatformRoofThickness)),
                               Base.Vector(0,1,0)).extrude(
                                 Base.Vector(0,self.__PlastructPS_97Thick,0))
         bb = temp.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
-        windowOrigin = Base.Vector(bb.XMin,
-                                   bb.YMin+self.__PlastructPS_97Thick+
-                                    (self.__WindowPostWidth/2),
+        windowOrigin = Base.Vector(bb.XMin+self.__PlastructPS_97Thick+
+                                    (self.__WindowPostWidth/2)+3.5,
+                                   bb.YMin,
                                    bb.ZMin+self.__KneeWallHeight+
                                     self.__PlatformRoofThickness)
-        
+        #xAdjust = Base.Vector(self.__WindowWidth,0,0)
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,#.add(xAdjust),
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__PlastructPS_97Thick,0)))
+        windowOrigin = windowOrigin.add(
+                        Base.Vector(self.__WindowWidth+
+                                        self.__WindowPostWidth,0,0))
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,#.add(xAdjust),
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__PlastructPS_97Thick,0)))
+        windowOrigin = windowOrigin.add(
+                        Base.Vector(self.__WindowWidth+
+                                        self.__WindowPostWidth,0,0))
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,#.add(xAdjust),
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__PlastructPS_97Thick,0)))
+        windowOrigin = windowOrigin.add(
+                        Base.Vector(self.__WindowWidth+
+                                        self.__WindowPostWidth,0,0))
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,#.add(xAdjust),
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__PlastructPS_97Thick,0)))
+        windowOrigin = windowOrigin.add(
+                        Base.Vector(self.__WindowWidth+
+                                        self.__WindowPostWidth,0,0))
         rightbridgewall = rightbridgewall.fuse(temp)
         self.outerwall = backwall.fuse(leftwall
             ).fuse(rightwall
