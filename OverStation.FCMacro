@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260505.1739>
+#  Last Modified : <260505.2142>
 #
 #  Description	
 #
@@ -1733,10 +1733,76 @@ class OverStation(BOMHelper, PartsHelper):
                            bridgePortalOrigin,
                            Base.Vector(0,1,0)).extrude(
                             Base.Vector(0,self.__MainWallWidth,0)))
-
+        wallLength_y = self.__CombinedTrackAndPlatformWidth#-(2*Elevator.ShaftLength)
+        innerleftbridgewall = Part.makePlane(self.__StationHeight,
+                                             wallLength_y,
+                                             elevator2Origin.add(
+                                                Base.Vector(Elevator.ShaftWidth+
+                                                                self.__GlassWallWidth,
+                                                            wallLength_y,
+                                                            wallZOff)),
+                                             Base.Vector(1,0,0)
+                   ).extrude(Base.Vector(self.__MainWallWidth,0,0))
+        bb = innerleftbridgewall.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        # windows
+        windowOrigin = Base.Vector(bb.XMin,
+                                   bb.YMin+Elevator.ShaftLength+
+                                    (self.__WindowPostWidth/2)+4.5,
+                                   bb.ZMin+self.__KneeWallHeight)
+        yAdjust = Base.Vector(0,self.__WindowWidth,0)
+        innerleftbridgewall = innerleftbridgewall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        innerleftbridgewall = innerleftbridgewall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        innerleftbridgewall = innerleftbridgewall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        innerleftbridgewall = innerleftbridgewall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,
+                                                0,0)))
+        windowOrigin = windowOrigin.add(
+                            Base.Vector(0,self.__WindowWidth+
+                                          self.__WindowPostWidth,0))
+        innerleftbridgewall = innerleftbridgewall.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin.add(yAdjust),
+                           Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,
+                                                0,0)))
+                
         self.innerwall = innerbackwall.fuse(innerleftwall
                         ).fuse(innerrightwall
-                            ).fuse(innerfrontwall)
+                            ).fuse(innerfrontwall
+                                ).fuse(innerleftbridgewall)
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
         if doc==None:
