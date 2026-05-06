@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260506.0949>
+#  Last Modified : <260506.1505>
 #
 #  Description	
 #
@@ -211,7 +211,28 @@ class OverStation(BOMHelper, PartsHelper):
     __PostDiameter       = Units.mm(Units.HOScale(Units.inches(2)))
     __BridgeWidth        = Units.mm(Units.HOScale(Units.inches(24)))
     __MainStationWidth   = Units.mm(Units.HOScale(Units.inches(75)))
+    __RestroomWidth      = Units.mm(Units.HOScale(Units.inches(20)))
+    __OfficeWidth        = Units.mm(Units.HOScale(Units.inches(15)))
+    __TicketWindowSpaceW = Units.mm(Units.HOScale(Units.inches(10)))
+    __TicketWindowWidth  = Units.mm(Units.HOScale(Units.inches(8)))
+    __TicketCounterHeight = Units.mm(Units.HOScale(Units.inches(4)))
+    __TicketWindowHeight = Units.mm(Units.HOScale(Units.inches(3)))
+    @property
+    def __InnerBlockWallLength(self):
+        return (2*self.__RestroomWidth)+self.__OfficeWidth+\
+                    self.__TicketWindowSpaceW
+    @property
+    def __InnerBlockWallXOff(self):
+        return (self.__MainStationWidth-self.__InnerBlockWallLength)/2
     __MainStationLength  = Units.mm(Units.HOScale(Units.inches(40)))
+    __InnerBlockWallYOff      = Units.mm(Units.HOScale(Units.inches(30)))
+    @property
+    def __RestroomBackWallLength(self):
+        return self.__MainStationLength-self.__InnerBlockWallYOff-\
+                 (2*self.__MainWallWidth)
+    __RestroomBackXOff   = Units.mm(Units.HOScale(Units.inches(20)))
+    __RestroomPrivacyWallLength = Units.mm(Units.HOScale(Units.inches(6)))
+    __RestroomPrivacyWallDX = Units.mm(Units.HOScale(Units.inches(6)))
     __MainStationXOffset = -Units.mm(Units.HOScale(Units.inches(10)))
     __StationHeight      = Units.mm(Units.HOScale(Units.inches(12)))
     @property
@@ -219,7 +240,7 @@ class OverStation(BOMHelper, PartsHelper):
         return self.__StairTread/self.__StairRiser
     __StairLandingRiseMax = Units.mm(Units.inches(Units.HOScale( 12 )))
     __StairHeadRoomMin    = Units.mm(Units.HOScale(80))
-    __PlatformStairWidth  = Units.mm(Units.inches(Units.HOScale( 7 )))
+    __PlatformStairWidth  = Units.mm(Units.inches(Units.HOScale( 6 )))
     @property
     def __PlatformStairLanding(self):
         return self.__StairHeadRoom
@@ -676,10 +697,12 @@ class OverStation(BOMHelper, PartsHelper):
                                     self.__PlatformRoofThickness,
                                self.__TotalStairLength(
                                     self.__PlatformStairTotalRise,
-                                    self.__PlatformStairWidth),
+                                    self.__PlatformStairWidth)+
+                                    self.__MainWallWidth,
                                self.stairShelterOrigin1.add(
                                 Base.Vector(0,
-                                            -self.__PlatformStairWidth,
+                                            -self.__PlatformStairWidth-
+                                                self.__MainWallWidth-.88,
                                             wallZOff-
                                                 self.__PlatformRoofThickness)),
                                Base.Vector(0,1,0)
@@ -689,12 +712,14 @@ class OverStation(BOMHelper, PartsHelper):
         wall = wall.fuse(wall1)
         wall1 = Part.makePlane(self.__StationHeight+
                                     self.__PlatformRoofThickness,
-                               self.__PlatformStairWidth,
+                               self.__PlatformStairWidth+self.__MainWallWidth+
+                                    .88,
                                self.stairShelterOrigin1.add(
                                 Base.Vector(
                                     self.__TotalStairLength(
                                         self.__PlatformStairTotalRise,
-                                        self.__PlatformStairWidth),
+                                        self.__PlatformStairWidth)+
+                                        self.__MainWallWidth,
                                     0,wallZOff-
                                         self.__PlatformRoofThickness)),
                                Base.Vector(1,0,0)
@@ -702,12 +727,17 @@ class OverStation(BOMHelper, PartsHelper):
         bb = wall1.BoundBox
         self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         wall = wall.fuse(wall1) 
-        wall1 = Part.makePlane(self.__StationHeight,
+        wall1 = Part.makePlane(self.__StationHeight+
+                                    self.__PlatformRoofThickness,
                                self.__TotalStairLength(
                                     self.__PlatformStairTotalRise,
-                                    self.__PlatformStairWidth),
+                                    self.__PlatformStairWidth)+
+                                        self.__MainWallWidth,
                                self.stairShelterOrigin2.add(
-                                Base.Vector(self.__GlassWallWidth,0,wallZOff)),
+                                Base.Vector(self.__GlassWallWidth,
+                                            self.__MainWallWidth,
+                                            wallZOff-
+                                                self.__PlatformRoofThickness)),
                                Base.Vector(0,1,0)
                 ).extrude(Base.Vector(0,self.__GlassWallWidth,0))
         bb = wall1.BoundBox
@@ -715,13 +745,15 @@ class OverStation(BOMHelper, PartsHelper):
         wall = wall.fuse(wall1)
         wall1 = Part.makePlane(self.__StationHeight+
                                     self.__PlatformRoofThickness,
-                               self.__PlatformStairWidth,
+                               self.__PlatformStairWidth+
+                                self.__MainWallWidth,
                                self.stairShelterOrigin2.add(
                                 Base.Vector(
                                     self.__TotalStairLength(
                                         self.__PlatformStairTotalRise,
-                                        self.__PlatformStairWidth),
-                                    0,wallZOff-
+                                        self.__PlatformStairWidth)+
+                                            self.__MainWallWidth,
+                                    self.__MainWallWidth,wallZOff-
                                         self.__PlatformRoofThickness)),
                                Base.Vector(1,0,0)
                ).extrude(Base.Vector(self.__GlassWallWidth,0,0))
@@ -1140,12 +1172,13 @@ class OverStation(BOMHelper, PartsHelper):
         frontwall1 = Part.makePlane(self.__StationHeight+
                                         self.__PlatformRoofThickness+
                                         self.__ParapetWallHeight,
-                                    1.54+self.__PlastructPS_97Thick,
+                                    3.29+self.__PlastructPS_97Thick,
                                     self.stairShelterOrigin1.add(
                                         Base.Vector(self.__TotalStairLength(
                                                         self.__PlatformStairTotalRise,
                                                         self.__PlatformStairWidth)+
-                                                      self.__GlassWallWidth,
+                                                      self.__GlassWallWidth+
+                                                      self.__MainWallWidth,
                                                     -self.__PlastructPS_97Thick,
                                                     wallZOff-self.__PlatformRoofThickness)),
                                     Base.Vector(0,1,0)).extrude(
@@ -1299,12 +1332,14 @@ class OverStation(BOMHelper, PartsHelper):
                                 self.__PlatformRoofThickness+
                                 self.__ParapetWallHeight,
                               self.__PlatformStairWidth+
-                                self.__PlastructPS_97Thick,
+                                self.__PlastructPS_97Thick+
+                                self.__MainWallWidth+.88,
                               self.stairShelterOrigin1.add(
                                 Base.Vector(self.__TotalStairLength(
                                                 self.__PlatformStairTotalRise,
                                                 self.__PlatformStairWidth)+
-                                                      self.__GlassWallWidth,
+                                                      self.__GlassWallWidth+
+                                                      self.__MainWallWidth,
                                                     0,
                                                     wallZOff-
                                                         self.__PlatformRoofThickness)),
@@ -1315,7 +1350,7 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.YLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
-                                    (self.__WindowPostWidth/2),
+                                    (self.__WindowPostWidth/2)+.88,
                                    bb.ZMin+self.__KneeWallHeight+
                                     self.__PlatformRoofThickness)
         w_y = self.__PlatformStairWidth-self.__WindowPostWidth
@@ -1333,11 +1368,13 @@ class OverStation(BOMHelper, PartsHelper):
                                 self.__PlatformStairTotalRise,
                                 self.__PlatformStairWidth)+
                                     self.__PlastructPS_97Thick+
-                                    self.__GlassWallWidth,
+                                    self.__GlassWallWidth+
+                                    self.__MainWallWidth,
                               self.stairShelterOrigin1.add(
                                 Base.Vector(0,
                                             -(self.__PlatformStairWidth+
-                                              self.__PlastructPS_97Thick),
+                                              self.__PlastructPS_97Thick+
+                                              self.__MainWallWidth+.88),
                                             wallZOff-
                                                 self.__PlatformRoofThickness)),
                               Base.Vector(0,1,0)).extrude(
@@ -1387,7 +1424,8 @@ class OverStation(BOMHelper, PartsHelper):
                                         self.__WindowPostWidth,0,0))
         rightbridgewall = rightbridgewall.fuse(temp)
         bridgeWall_y = self.__CombinedTrackAndPlatformWidth - \
-                        (2*self.__PlatformStairWidth)-self.__GlassWallWidth
+                        (2*self.__PlatformStairWidth)-self.__GlassWallWidth-\
+                        (2*self.__MainWallWidth)-.88
         temp = Part.makePlane(self.__StationHeight+
                                 self.__PlatformRoofThickness+
                                 self.__ParapetWallHeight,
@@ -1395,7 +1433,8 @@ class OverStation(BOMHelper, PartsHelper):
                               self.stairShelterOrigin2.add(
                                 Base.Vector(
                                     0,
-                                    bridgeWall_y+self.__GlassWallWidth,
+                                    bridgeWall_y+self.__GlassWallWidth+
+                                        self.__MainWallWidth,
                                     self.__PlatformRoofHeight+
                                         self.__PlatformRoofThickness-
                                         self.__PlatformHeight)),
@@ -1406,7 +1445,8 @@ class OverStation(BOMHelper, PartsHelper):
         # windows
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
-                                    (self.__WindowPostWidth/2)+4.5+6.8,
+                                    (self.__WindowPostWidth/2)+4.5+6.8+
+                                    self.__MainWallWidth,
                                    bb.ZMin+self.__KneeWallHeight+
                                     self.__PlatformRoofThickness)
         yAdjust = Base.Vector(0,self.__WindowWidth,0)
@@ -1465,10 +1505,12 @@ class OverStation(BOMHelper, PartsHelper):
                                 self.__PlatformStairTotalRise,
                                 self.__PlatformStairWidth)+
                                     self.__PlastructPS_97Thick+
-                                    self.__GlassWallWidth,
+                                    self.__GlassWallWidth+
+                                    self.__MainWallWidth,
                               self.stairShelterOrigin2.add(
                                 Base.Vector(0,
-                                            self.__GlassWallWidth,
+                                            self.__GlassWallWidth+
+                                                self.__MainWallWidth,
                                             wallZOff-
                                                 self.__PlatformRoofThickness)),
                               Base.Vector(0,1,0)).extrude(
@@ -1522,16 +1564,19 @@ class OverStation(BOMHelper, PartsHelper):
                                 self.__ParapetWallHeight,
                               self.__PlatformStairWidth+
                                 self.__GlassWallWidth+
-                                self.__PlastructPS_97Thick,
+                                self.__PlastructPS_97Thick+
+                                self.__MainWallWidth,
                               self.stairShelterOrigin2.add(
                                 Base.Vector(self.__TotalStairLength(
                                                 self.__PlatformStairTotalRise,
                                                 self.__PlatformStairWidth)+
-                                                    self.__GlassWallWidth,
                                                     self.__GlassWallWidth+
-                                                        self.__PlastructPS_97Thick,
-                                                    wallZOff-
-                                                        self.__PlatformRoofThickness)),
+                                                    self.__MainWallWidth,
+                                             self.__GlassWallWidth+
+                                                 self.__PlastructPS_97Thick+
+                                                 self.__MainWallWidth,
+                                             wallZOff-
+                                                  self.__PlatformRoofThickness)),
                                     Base.Vector(1,0,0)).extrude(
                                         Base.Vector(self.__PlastructPS_97Thick,
                                                     0,0))
@@ -1879,16 +1924,19 @@ class OverStation(BOMHelper, PartsHelper):
                            Base.Vector(1,0,0)).extrude(
                                     Base.Vector(self.__MainWallWidth,
                                                 0,0)))
-        temp = Part.makePlane(self.__StationHeight,
+        temp = Part.makePlane(self.__StationHeight+
+                                    self.__PlatformRoofThickness,
                               self.__PlatformStairWidth-
-                                self.__GlassWallWidth,
+                                self.__GlassWallWidth+
+                                self.__MainWallWidth+.88,
                               self.stairShelterOrigin1.add(
                                 Base.Vector(self.__TotalStairLength(
                                                 self.__PlatformStairTotalRise,
-                                                self.__PlatformStairWidth)-
-                                                      self.__MainWallWidth,
+                                                self.__PlatformStairWidth),
                                                     0,
-                                                    wallZOff)),
+                                                    wallZOff-
+                                                        self.__PlatformRoofThickness
+                                                    )),
                                     Base.Vector(1,0,0)).extrude(
                                         Base.Vector(self.__MainWallWidth,
                                                     0,0))
@@ -1896,8 +1944,9 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin-self.__GlassWallWidth+
-                                    (self.__WindowPostWidth/2),
-                                   bb.ZMin+self.__KneeWallHeight)
+                                    (self.__WindowPostWidth/2)+.88,
+                                   bb.ZMin+self.__KneeWallHeight+
+                                        self.__PlatformRoofThickness)
         w_y = self.__PlatformStairWidth-self.__WindowPostWidth
         temp = temp.cut(
             Part.makePlane(self.__WindowHeight,
@@ -1906,16 +1955,18 @@ class OverStation(BOMHelper, PartsHelper):
                            Base.Vector(1,0,0)).extrude(
                             Base.Vector(self.__MainWallWidth,0,0)))
         stairway1innerwall = temp
-        temp = Part.makePlane(self.__StationHeight,
+        temp = Part.makePlane(self.__StationHeight+
+                                self.__PlatformRoofThickness,
                               self.__TotalStairLength(
                                 self.__PlatformStairTotalRise,
-                                self.__PlatformStairWidth)-
-                                    self.__MainWallWidth,
+                                self.__PlatformStairWidth),
                               self.stairShelterOrigin1.add(
                                 Base.Vector(0,
                                             -(self.__PlatformStairWidth-
-                                              self.__GlassWallWidth),
-                                            wallZOff)),
+                                              self.__GlassWallWidth+
+                                              self.__MainWallWidth)-.88,
+                                            wallZOff-
+                                                self.__PlatformRoofThickness)),
                               Base.Vector(0,1,0)).extrude(
                                 Base.Vector(0,self.__MainWallWidth,0))
         bb = temp.BoundBox
@@ -1923,7 +1974,8 @@ class OverStation(BOMHelper, PartsHelper):
         windowOrigin = Base.Vector(bb.XMin+self.__PlastructPS_97Thick+
                                     (self.__WindowPostWidth/2)+3.5,
                                    bb.YMin,
-                                   bb.ZMin+self.__KneeWallHeight)
+                                   bb.ZMin+self.__KneeWallHeight+
+                                    self.__PlatformRoofThickness)
         temp = temp.cut(
             Part.makePlane(self.__WindowHeight,
                            self.__WindowWidth,
@@ -1957,15 +2009,176 @@ class OverStation(BOMHelper, PartsHelper):
                            windowOrigin,#.add(xAdjust),
                            Base.Vector(0,1,0)).extrude(
                             Base.Vector(0,self.__MainWallWidth,0)))
-        stairway1innerwall = stairway1innerwall.fuse(temp)        
-        #stairway2innerwall = 
+        stairway1innerwall = stairway1innerwall.fuse(temp)
+        temp = Part.makePlane(self.__StationHeight+
+                                    self.__PlatformRoofThickness,
+                              self.__PlatformStairWidth,
+                              self.stairShelterOrigin2.add(
+                                Base.Vector(self.__TotalStairLength(
+                                                self.__PlatformStairTotalRise,
+                                                self.__PlatformStairWidth),
+                                                    0,
+                                                    wallZOff-
+                                                        self.__PlatformRoofThickness
+                                                    )),
+                                    Base.Vector(1,0,0)).extrude(
+                                        Base.Vector(self.__MainWallWidth,
+                                                    0,0))
+        bb = temp.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        windowOrigin = Base.Vector(bb.XMin,
+                                   bb.YMin+
+                                    (self.__WindowPostWidth/2),
+                                   bb.ZMin+self.__KneeWallHeight+
+                                        self.__PlatformRoofThickness)
+        w_y = self.__PlatformStairWidth-self.__WindowPostWidth
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           w_y,
+                           windowOrigin.add(Base.Vector(0,w_y,0)),
+                           Base.Vector(1,0,0)).extrude(
+                            Base.Vector(self.__MainWallWidth,0,0)))
+        stairway2innerwall = temp
+        temp = Part.makePlane(self.__StationHeight+
+                                self.__PlatformRoofThickness,
+                              self.__TotalStairLength(
+                                self.__PlatformStairTotalRise,
+                                self.__PlatformStairWidth)+
+                                    self.__MainWallWidth,
+                              self.stairShelterOrigin2.add(
+                                Base.Vector(0,
+                                            0,
+                                            wallZOff-
+                                                self.__PlatformRoofThickness)),
+                              Base.Vector(0,1,0)).extrude(
+                                Base.Vector(0,self.__MainWallWidth,0))
+        bb = temp.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        windowOrigin = Base.Vector(bb.XMin+self.__PlastructPS_97Thick+
+                                    (self.__WindowPostWidth/2)+3.5,
+                                   bb.YMin,
+                                   bb.ZMin+self.__KneeWallHeight+
+                                    self.__PlatformRoofThickness)
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__MainWallWidth,0)))
+        windowOrigin = windowOrigin.add(
+                        Base.Vector(self.__WindowWidth+
+                                        self.__WindowPostWidth,0,0))
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,#.add(xAdjust),
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__MainWallWidth,0)))
+        windowOrigin = windowOrigin.add(
+                        Base.Vector(self.__WindowWidth+
+                                        self.__WindowPostWidth,0,0))
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,#.add(xAdjust),
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__MainWallWidth,0)))
+        windowOrigin = windowOrigin.add(
+                        Base.Vector(self.__WindowWidth+
+                                        self.__WindowPostWidth,0,0))
+        temp = temp.cut(
+            Part.makePlane(self.__WindowHeight,
+                           self.__WindowWidth,
+                           windowOrigin,#.add(xAdjust),
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__MainWallWidth,0)))
+        stairway2innerwall = stairway2innerwall.fuse(temp)
         self.innerwall = innerbackwall.fuse(innerleftwall
                         ).fuse(innerrightwall
                             ).fuse(innerfrontwall
                                 ).fuse(innerleftbridgewall
                                     ).fuse(innerrightbridgewall
                                         ).fuse(stairway1innerwall
-                                            )#.fuse(stairway2innerwall)
+                                            ).fuse(stairway2innerwall)
+        innerblockwall = Part.makePlane(self.__StationHeight,
+                                        self.__InnerBlockWallLength,
+                                        stationOrigin.add(
+                                            Base.Vector(self.__InnerBlockWallXOff,
+                                                        self.__InnerBlockWallYOff,
+                                                        self.__PlatformRoofThickness)),
+                                         Base.Vector(0,1,0)
+                       ).extrude(Base.Vector(0,self.__MainWallWidth,0))
+        bb = innerblockwall.BoundBox
+        self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        innerBlockOrigin = Base.Vector(bb.XMin,bb.YMin,bb.ZMin)
+        restroom1 = Part.makePlane(self.__StationHeight,
+                                   self.__RestroomBackWallLength,
+                                   innerBlockOrigin.add(Base.Vector(
+                                        self.__RestroomBackXOff,
+                                        self.__MainWallWidth+
+                                            self.__RestroomBackWallLength,
+                                        0)),
+                                    Base.Vector(1,0,0)).extrude(
+                                        Base.Vector(self.__MainWallWidth,0,0))
+        bb = restroom1.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        rrpriv1a = Part.makePlane(self.__StationHeight,
+                                 self.__RestroomPrivacyWallLength,
+                                 innerBlockOrigin.add(Base.Vector(
+                                    0,self.__RestroomBackWallLength+
+                                        self.__MainWallWidth,0)),
+                                 Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,0,0))
+        bb = rrpriv1a.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        restroom1 = restroom1.fuse(rrpriv1a)
+        rrpriv1b = Part.makePlane(self.__StationHeight,
+                                  self.__RestroomPrivacyWallLength,
+                                  innerBlockOrigin.add(Base.Vector(
+                                    self.__RestroomPrivacyWallDX,
+                                    self.__MainWallWidth+
+                                        self.__RestroomPrivacyWallLength,0)),
+                                  Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,0,0))
+        bb = rrpriv1b.BoundBox 
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        restroom1 = restroom1.fuse(rrpriv1b)        
+        restroom2 = Part.makePlane(self.__StationHeight,
+                                   self.__RestroomBackWallLength,
+                                   innerBlockOrigin.add(Base.Vector(
+                                        self.__InnerBlockWallLength-
+                                            self.__RestroomBackXOff,
+                                        self.__MainWallWidth+
+                                            self.__RestroomBackWallLength,
+                                        0)),
+                                    Base.Vector(1,0,0)).extrude(
+                                        Base.Vector(-self.__MainWallWidth,0,0))
+        bb = restroom2.BoundBox
+        rrpriv2a = Part.makePlane(self.__StationHeight,
+                                 self.__RestroomPrivacyWallLength,
+                                 innerBlockOrigin.add(Base.Vector(
+                                    self.__InnerBlockWallLength-
+                                        self.__MainWallWidth,
+                                    self.__MainWallWidth+
+                                        self.__RestroomBackWallLength,0)),
+                                 Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(self.__MainWallWidth,0,0))
+        bb = rrpriv2a.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        restroom2 = restroom2.fuse(rrpriv2a)
+        rrpriv2b = Part.makePlane(self.__StationHeight,
+                                  self.__RestroomPrivacyWallLength,
+                                  innerBlockOrigin.add(Base.Vector(
+                                    self.__InnerBlockWallLength-
+                                        self.__RestroomPrivacyWallDX,
+                                    self.__MainWallWidth+
+                                        self.__RestroomPrivacyWallLength,0)),
+                                  Base.Vector(1,0,0)).extrude(
+                                    Base.Vector(-self.__MainWallWidth,0,0))
+        bb = rrpriv2b.BoundBox 
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        restroom2 = restroom2.fuse(rrpriv2b)
+        self.innerblock = innerblockwall.fuse(restroom1).fuse(restroom2)
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
         if doc==None:
@@ -2032,6 +2245,10 @@ class OverStation(BOMHelper, PartsHelper):
         obj = doc.addObject("Part::Feature",self.name+"_InnerWall")
         obj.Shape = self.innerwall
         obj.Label=self.name+"_InnerWall"
+        obj.ViewObject.ShapeColor=self.__InnerWallColor
+        obj = doc.addObject("Part::Feature",self.name+"_InnerBlock")
+        obj.Shape = self.innerblock
+        obj.Label=self.name+"_InnerBlock"
         obj.ViewObject.ShapeColor=self.__InnerWallColor
         #obj = doc.addObject("Part::Feature",self.name+"_doorCut")
         #obj.Shape = self.doorCut
