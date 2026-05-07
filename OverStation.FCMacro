@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260506.1505>
+#  Last Modified : <260507.0904>
 #
 #  Description	
 #
@@ -213,14 +213,20 @@ class OverStation(BOMHelper, PartsHelper):
     __MainStationWidth   = Units.mm(Units.HOScale(Units.inches(75)))
     __RestroomWidth      = Units.mm(Units.HOScale(Units.inches(20)))
     __OfficeWidth        = Units.mm(Units.HOScale(Units.inches(15)))
-    __TicketWindowSpaceW = Units.mm(Units.HOScale(Units.inches(10)))
+    __TicketWindowSpaceWidth = Units.mm(Units.HOScale(Units.inches(10)))
     __TicketWindowWidth  = Units.mm(Units.HOScale(Units.inches(8)))
     __TicketCounterHeight = Units.mm(Units.HOScale(Units.inches(4)))
     __TicketWindowHeight = Units.mm(Units.HOScale(Units.inches(3)))
+    # from UG-2832HSWEG02.pdf (SAS1-B026-B, Univision Technology Inc.)
+    __DepartureBoardWidth = 30
+    __DepartureBoardHeight = 11.5
+    __DepartureBoardZOffset = Units.mm(Units.HOScale(Units.inches(5)))
+    __DepartureBoardXOffset = Units.mm(Units.HOScale(Units.inches(20+2)))
+    __TicketCounterXOffset  = Units.mm(Units.HOScale(Units.inches(20+15)))
     @property
     def __InnerBlockWallLength(self):
         return (2*self.__RestroomWidth)+self.__OfficeWidth+\
-                    self.__TicketWindowSpaceW
+                    self.__TicketWindowSpaceWidth
     @property
     def __InnerBlockWallXOff(self):
         return (self.__MainStationWidth-self.__InnerBlockWallLength)/2
@@ -2178,6 +2184,26 @@ class OverStation(BOMHelper, PartsHelper):
         bb = rrpriv2b.BoundBox 
         self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
         restroom2 = restroom2.fuse(rrpriv2b)
+        departboardOrig = innerBlockOrigin.add(
+                                Base.Vector(self.__DepartureBoardXOffset,
+                                            0,
+                                            self.__DepartureBoardZOffset))
+        innerblockwall = innerblockwall.cut(
+            Part.makePlane(self.__DepartureBoardHeight,
+                           self.__DepartureBoardWidth,
+                           departboardOrig,
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__MainWallWidth,0)))
+        ticketWindowOrig = innerBlockOrigin.add(
+                                Base.Vector(self.__TicketCounterXOffset,
+                                            0,
+                                            self.__TicketCounterHeight))
+        innerblockwall = innerblockwall.cut(
+            Part.makePlane(self.__TicketWindowHeight,
+                           self.__TicketWindowWidth,
+                           ticketWindowOrig,
+                           Base.Vector(0,1,0)).extrude(
+                            Base.Vector(0,self.__MainWallWidth,0)))
         self.innerblock = innerblockwall.fuse(restroom1).fuse(restroom2)
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
