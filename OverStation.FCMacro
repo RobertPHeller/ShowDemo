@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260507.0904>
+#  Last Modified : <260507.1513>
 #
 #  Description	
 #
@@ -851,6 +851,17 @@ class OverStation(BOMHelper, PartsHelper):
                                         Base.Vector(0,0,
                                                     self.__PlatformRoofThickness))
         self.floor = self.floor.fuse(vestibleFloor)
+        self.vestibleCeilingLeft = Part.makePlane(self.__VestibleLength+
+                                        self.__PlastructPS_97Thick,
+                                       self.__VestibleWidth,
+                                       vestibleFloorOrigin.add(
+                                        Base.Vector(0,0,
+                                                    self.__PlatformRoofThickness+
+                                                        self.__VestibleHeight))
+                        ).extrude(Base.Vector(0,0,
+                                              self.__PlatformRoofThickness))
+        bb1 = self.vestibleCeilingLeft.BoundBox                                              
+        self.AddPiece(bb1.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         leftwall = leftwall.cut(vestibleFloor)
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
@@ -939,7 +950,8 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPart("Tichy Train Group #8198 Double Glass Door")
         self.vestibleInnerWallLeft = self.vestibleInnerWallLeft.fuse(vestibleInnerWall)
         vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
-                                            self.__ParapetWallHeight,
+                                            self.__ParapetWallHeight+
+                                            self.__PlatformRoofThickness,
                                            self.__VestibleLength+
                                             self.__PlastructPS_97Thick,
                                            vestibleFloorOrigin.add(
@@ -953,7 +965,8 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         vestibleOuterWallLeft = vestibleOuterWall
         vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
-                                            self.__ParapetWallHeight,
+                                            self.__ParapetWallHeight+
+                                            self.__PlatformRoofThickness,
                                            self.__VestibleLength+
                                             self.__PlastructPS_97Thick,
                                            vestibleFloorOrigin.add(
@@ -967,7 +980,8 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         vestibleOuterWallLeft = vestibleOuterWallLeft.fuse(vestibleOuterWall)
         vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
-                                            self.__ParapetWallHeight,
+                                            self.__ParapetWallHeight+
+                                            self.__PlatformRoofThickness,
                                            self.__VestibleWidth+
                                             (2*self.__PlastructPS_97Thick),
                                            vestibleFloorOrigin.add(
@@ -1022,6 +1036,17 @@ class OverStation(BOMHelper, PartsHelper):
                                         Base.Vector(0,0,
                                                     self.__PlatformRoofThickness))
         self.floor = self.floor.fuse(vestibleFloor)
+        self.vestibleCeilingRight = Part.makePlane(self.__VestibleLength+
+                                        self.__PlastructPS_97Thick,
+                                       self.__VestibleWidth,
+                                       vestibleFloorOrigin.add(
+                                        Base.Vector(0,0,
+                                                    self.__PlatformRoofThickness+
+                                                        self.__VestibleHeight))
+                        ).extrude(Base.Vector(0,0,
+                                              self.__PlatformRoofThickness))
+        bb1 = self.vestibleCeilingRight.BoundBox                                              
+        self.AddPiece(bb1.XLength,bb.YLength,".080 Styreen (SSS-10824)")
         rightwall = rightwall.cut(vestibleFloor)
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
@@ -1112,7 +1137,8 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPart("Tichy Train Group #8198 Double Glass Door")
         self.vestibleInnerWallRight = self.vestibleInnerWallRight.fuse(vestibleInnerWall)
         vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
-                                            self.__ParapetWallHeight,
+                                            self.__ParapetWallHeight+
+                                            self.__PlatformRoofThickness,
                                            self.__VestibleLength+
                                             self.__PlastructPS_97Thick,
                                            vestibleFloorOrigin.add(
@@ -1126,7 +1152,8 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         vestibleOuterWallRight = vestibleOuterWall
         vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
-                                            self.__ParapetWallHeight,
+                                            self.__ParapetWallHeight+
+                                            self.__PlatformRoofThickness,
                                            self.__VestibleLength+
                                             self.__PlastructPS_97Thick,
                                            vestibleFloorOrigin.add(
@@ -1140,7 +1167,8 @@ class OverStation(BOMHelper, PartsHelper):
         self.AddPiece(bb.XLength,bb.ZLength,"Plastruct HO Brick (PS-97)")
         vestibleOuterWallRight = vestibleOuterWallRight.fuse(vestibleOuterWall)
         vestibleOuterWall = Part.makePlane(self.__VestibleHeight+
-                                            self.__ParapetWallHeight,
+                                            self.__ParapetWallHeight+
+                                            self.__PlatformRoofThickness,
                                            self.__VestibleWidth+
                                             (2*self.__PlastructPS_97Thick),
                                            vestibleFloorOrigin.add(
@@ -2205,6 +2233,62 @@ class OverStation(BOMHelper, PartsHelper):
                            Base.Vector(0,1,0)).extrude(
                             Base.Vector(0,self.__MainWallWidth,0)))
         self.innerblock = innerblockwall.fuse(restroom1).fuse(restroom2)
+        # ceiling
+        ceil1 = Part.makePlane(self.__BridgeWidth,
+                               self.__CombinedTrackAndPlatformWidth,
+                               elevator2Origin.add(
+                                    Base.Vector(Elevator.ShaftWidth,
+                                                0,
+                                                self.__PlatformRoofHeight+
+                                                    self.__PlatformRoofThickness-
+                                                    self.__PlatformHeight+
+                                                    self.__StationHeight+
+                                                    self.__PlatformRoofThickness))
+                  ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+        ceil2 = Part.makePlane(self.__MainStationWidth,
+                                self.__MainStationLength,
+                                stationOrigin.add(
+                                    Base.Vector(0,0,
+                                                self.__PlatformRoofThickness+
+                                                    self.__StationHeight))
+               ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+        stair1Ceiling = Part.makePlane(self.__TotalStairLength(
+                                            self.__PlatformStairTotalRise,
+                                            self.__PlatformStairWidth)+
+                                        self.__MainWallWidth+
+                                        self.__GlassWallWidth,
+                                       self.__PlatformStairWidth+
+                                        self.__MainWallWidth+
+                                        self.__GlassWallWidth,
+                                       self.stairShelterOrigin1.add(
+                                        Base.Vector(.12,
+                                                    -(self.__PlatformStairWidth+
+                                                      self.__GlassWallWidth+
+                                                      self.__MainWallWidth),
+                                                    wallZOff+
+                                                        self.__StationHeight))
+                        ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+        stair2Ceiling = Part.makePlane(self.__TotalStairLength(
+                                            self.__PlatformStairTotalRise,
+                                            self.__PlatformStairWidth)+
+                                        self.__MainWallWidth+
+                                        self.__GlassWallWidth,
+                                       self.__PlatformStairWidth+
+                                        self.__MainWallWidth+
+                                        self.__GlassWallWidth,
+                                       self.stairShelterOrigin2.add(
+                                        Base.Vector(.12,
+                                                    -(self.__PlatformStairWidth),
+                                                    wallZOff+
+                                                        self.__StationHeight))
+                        ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+
+        self.ceiling = ceil1.fuse(ceil2).fuse(stair1Ceiling
+                                ).fuse(stair2Ceiling)
+        bb = self.ceiling.BoundBox
+        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        # roof
+        
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
         if doc==None:
@@ -2275,6 +2359,18 @@ class OverStation(BOMHelper, PartsHelper):
         obj = doc.addObject("Part::Feature",self.name+"_InnerBlock")
         obj.Shape = self.innerblock
         obj.Label=self.name+"_InnerBlock"
+        obj.ViewObject.ShapeColor=self.__InnerWallColor
+        obj = doc.addObject("Part::Feature",self.name+"_Ceiling")
+        obj.Shape = self.ceiling
+        obj.Label=self.name+"_Ceiling"
+        obj.ViewObject.ShapeColor=self.__InnerWallColor
+        obj = doc.addObject("Part::Feature",self.name+"_VestibleCeilingLeft")
+        obj.Shape = self.vestibleCeilingLeft
+        obj.Label=self.name+"_VestibleCeilingLeft"
+        obj.ViewObject.ShapeColor=self.__InnerWallColor
+        obj = doc.addObject("Part::Feature",self.name+"_VestibleCeilingRight")
+        obj.Shape = self.vestibleCeilingRight
+        obj.Label=self.name+"_VestibleCeilingRight"
         obj.ViewObject.ShapeColor=self.__InnerWallColor
         #obj = doc.addObject("Part::Feature",self.name+"_doorCut")
         #obj.Shape = self.doorCut
