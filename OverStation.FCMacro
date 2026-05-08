@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260507.2113>
+#  Last Modified : <260508.1736>
 #
 #  Description	
 #
@@ -52,6 +52,8 @@ import csv
 import math
 import Units
 from debug import debug
+
+import LaserCut
 
 def NormalizeMM(x):
     return round(x,3)
@@ -200,10 +202,10 @@ class OverStation(BOMHelper, PartsHelper):
     __PlatformHeight      = Units.mm(Units.HOScale(51))
     __CombinedTrackAndPlatformWidth = Units.mm(8.1)
     __TotalStationLength = Units.mm(22.5)
-    __MainWallWidth = Units.HOScale(Units.mm(6))
-    __GlassWallWidth  = Units.HOScale(Units.mm(3))
-    __PlastructPS_97Thick = .5
-    __PlatformRoofThickness = Units.HOScale(Units.mm(6))
+    __MainWallWidth = .080*25.4
+    __GlassWallWidth  = .040*25.4 
+    __PlastructPS_97Thick = .020*25.4
+    __PlatformRoofThickness = .080*25.4
     __StairRiser         = Units.mm(Units.HOScale(5.5))
     __StairTread         = Units.mm(Units.HOScale(11))
     __PostOffset         = Units.mm(Units.HOScale(Units.inches(5)))
@@ -426,10 +428,11 @@ class OverStation(BOMHelper, PartsHelper):
                                 -Elevator.ShaftLength,
                                 0)),
                            Base.Vector(0,1,0)).extrude(Base.Vector(0,self.__GlassWallWidth))
-        self.elevator1Shelter = elevatorShelter.fuse(e1sA).cut(
-            self.__singleDoorCut(elevatorShelterDoorOrigin,
-                                 self.__GlassWallWidth))
-
+        e1sA = e1sA.cut(self.__singleDoorCut(elevatorShelterDoorOrigin,
+                                             self.__GlassWallWidth))  
+        self.elevator1Shelter = elevatorShelter.fuse(e1sA)
+        LaserCut.CopolysterSSC_104Cut.AddCut(elevatorShelter)
+        LaserCut.CopolysterSSC_104Cut.AddCut(e1sA)
         bb = e1sA.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         self.AddPart("Tichy Train Group #8195 Single Glass Door")
