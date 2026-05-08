@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260501.2020>
+#  Last Modified : <260508.1239>
 #
 #  Description	
 #
@@ -485,7 +485,7 @@ class UnderStation(BOMHelper, PartsHelper):
                                       Base.Vector(1,0,0))\
                .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
         bb = stairShelter.BoundBox
-        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         ss1A = Part.makePlane(
                 self.__PlatformRoofHeight-self.__PlatformHeight,
                 stairwellcutLen+self.__PlatformStairWidth+(2*self.__GlassWallWidth),
@@ -510,7 +510,7 @@ class UnderStation(BOMHelper, PartsHelper):
             self.__singleDoorCut(stairShelterDoorOrigin,
                                  self.__GlassWallWidth))
         self.AddPart("Tichy Train Group #8195 Single Glass Door")
-        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         postSkip2 = (stairShelterOrigin.x-self.__GlassWallWidth,
                       stairShelterOrigin.x+stairwellcutLen+self.__PlatformStairWidth+self.__GlassWallWidth)
         stairShelterOrigin = Base.Vector(self.platform2StairOrigin.x+\
@@ -524,7 +524,7 @@ class UnderStation(BOMHelper, PartsHelper):
                                       Base.Vector(1,0,0))\
                .extrude(Base.Vector(-self.__GlassWallWidth,0,0))
         bb = stairShelter.BoundBox
-        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         ss1A = Part.makePlane(
                 self.__PlatformRoofHeight-self.__PlatformHeight,
                 stairwellcutLen+self.__PlatformStairWidth+(2*self.__GlassWallWidth),
@@ -548,7 +548,7 @@ class UnderStation(BOMHelper, PartsHelper):
         self.stair2Shelter = stairShelter.fuse(ss1A).cut(
             self.__singleDoorCut(stairShelterDoorOrigin,
                                  self.__GlassWallWidth))
-        self.AddPiece(bb.XLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
+        self.AddPiece(bb.YLength,bb.ZLength,".040 Clear Copolyester (SSC-104)")
         self.AddPart("Tichy Train Group #8195 Single Glass Door")
         platform = Part.makePlane(self.__LongPlatformLength,
                                   platformBaseWidth,
