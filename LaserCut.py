@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-05-08 11:42:13
-#  Last Modified : <260508.2022>
+#  Last Modified : <260509.1453>
 #
 #  Description	
 #
@@ -53,8 +53,6 @@ import math
 import Units
 from debug import debug
 import datetime                                                                 
-
-from debug import debug
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
@@ -121,18 +119,28 @@ class LaserCut(object):
     @classmethod
     def IncrPageNum(cls):
         cls.__pageNum += 1
+    __objNum = 0
+    @classmethod 
+    def ObjName(cls):
+        return "Obj%04d"%(cls.__objNum)
+    @classmethod
+    def IncrObjNum(cls):
+        cls.__objNum += 1
     @classmethod
     def NewPage(cls):
         cls.IncrPageNum()
-        page = cls.Document().addObject('TechDraw::DrawPage',"%sPage_%03d"%(cls.__name__,cls.PageNum()))
+        name = "%sPage_%03d"%(cls.__name__,cls.PageNum())
+        page = cls.Document().addObject('TechDraw::DrawPage',name)
         page.Template = cls.template
         page.ViewObject.show()
-        return page
+        #debug("*** LaserCut.NewPage(%s): returning (%s, %s)"%(cls,page,name+'.svg'))
+        return (page, name+'.svg')
     def Init(self):
-        #debug("*** Testing.Init(%s)",self)
+        #debug("*** Testing.Init(%s)"%(self))
         cls = self.__class__
         if cls.__currentSheet != None:
-            __currentSheet.finish()
+            #debug("*** Testing.Init(%s): cls.__currentSheet is %s"%(self,cls.__currentSheet))
+            cls.__currentSheet.finish()
         cls.__currentSheet = self
         if cls.__sheetList == None:
             cls.__sheetList = list()
@@ -141,38 +149,165 @@ class LaserCut(object):
             cls.__currentDocument = App.newDocument(cls.__name__)
             cls.template = cls.__currentDocument.addObject('TechDraw::DrawSVGTemplate','CutPanelTemplate')
             cls.template.Template = self.SheetTemplate
-        self.page = cls.NewPage()
-        
+        self.page, self.filename = self.NewPage()
+        self.lastX = 6.35
+        self.lastY = 6.35
+        self.deltaY = 0
+        #debug("*** Testing.Init(%s): self.lastX is %.4f, self.lastY is %.4f, self.deltaY is %.4f"%(self,self.lastX ,self.lastY,self.deltaY))   
     @classmethod
-    def AddCut(cls,shape):
+    def AddCut(cls,shape,dir=1,rotatable=True):
         #debug("%s.AddCut(%s,%s)",cls,cls,shape)
         if cls.__currentSheet == None:
             x = cls.__new__(cls)
             if isinstance(x,cls): x.__init__()
         bb = shape.BoundBox
-        debug("*** LaserCut.AddCut(): bb.XLength is %.4f, bb.YLength is %.4f, bb.ZLength is %.4f, ...SheetThick is %.4f",bb.XLength,bb.YLength,bb.ZLength,cls.__currentSheet.SheetThick)
+        #debug("*** LaserCut.AddCut(): bb.XLength is %.4f, bb.YLength is %.4f, bb.ZLength is %.4f, ...SheetThick is %.4f",bb.XLength,bb.YLength,bb.ZLength,cls.__currentSheet.SheetThick)
         if round(bb.XLength,3) == round(cls.__currentSheet.SheetThick,3):
-            if not cls.__currentSheet.FitP_(bb.YLength,bb.ZLength):
-                cls.__currentSheet = cls.__new__()
-            cls.__currentSheet.AddCut_(shape,Base.Vector(1,0,0))
+            if cls.__currentSheet.__AddCut(shape,Base.Vector(dir,0,0),rotatable):
+                return
+            x = cls.__new__(cls)
+            if isinstance(x,cls): x.__init__()
+            cls.__currentSheet.__AddCut(shape,Base.Vector(dir,0,0),rotatable)
         elif round(bb.YLength,3) == round(cls.__currentSheet.SheetThick,3):
-            if not cls.__currentSheet.FitP_(bb.XLength,bb.ZLength):
-                cls.__currentSheet = cls.__new__()
-            cls.__currentSheet.AddCut_(shape,Base.Vector(0,1,0))
+            if cls.__currentSheet.__AddCut(shape,Base.Vector(0,dir,0),rotatable):
+                return
+            x = cls.__new__(cls)
+            if isinstance(x,cls): x.__init__()
+            cls.__currentSheet.__AddCut(shape,Base.Vector(0,dir,0),rotatable)
         else:
-            if not cls.__currentSheet.FitP_(bb.XLength,bb.YLength):
-                cls.__currentSheet = cls.__new__()
-            cls.__currentSheet.AddCut_(shape,Base.Vector(0,0,1))
-    @abstractmethod
-    def FitP_(self,XLength,YLength):
-        pass
-    @abstractmethod
-    def AddCut_(self,shape,direction=Base.Vector(0,0,1)):
-        pass
-    @abstractmethod
+            if cls.__currentSheet.__AddCut(shape,Base.Vector(0,0,dir),rotatable):
+                return
+            x = cls.__new__(cls)
+            if isinstance(x,cls): x.__init__()
+            cls.__currentSheet.__AddCut(shape,Base.Vector(0,0,dir),rotatable)
+    @staticmethod
+    def FitPanelRotatable(lastX,lastY,lengthX,lengthY,deltaY,minX,minY,maxX,maxY):
+        currentX = lastX
+        currentY = lastY
+        rotation = 0
+        if (lengthY > 2*deltaY and lengthX < deltaY) or \
+            lengthY > lengthX*2:
+            temp = lengthX
+            lengthX = lengthY
+            lengthY = temp
+            rotation = 90
+        if currentX+lengthX < maxX and \
+           currentY+lengthY < maxY:
+            #debug("*** LaserCut.FitPanelRotatable(A): deltaY = ",deltaY,", lengthY = ",lengthY)
+            deltaY = max(deltaY,lengthY+10)
+            return (True, currentX, currentY, lengthX, lengthY, deltaY, rotation)
+        elif currentX+lengthX > maxX and \
+           currentY+lengthY+deltaY < maxY and \
+           minX+lengthX < maxX:
+            currentX = minX
+            currentY += deltaY
+            return (True, currentX, currentY, lengthX, lengthY+10, deltaY, rotation)
+        elif currentY+lengthY > maxY and \
+             currentY+lengthX < maxY and \
+             currentX+lengthY < maxX:
+            temp = lengthX
+            lengthX = lengthY
+            lengthY = temp
+            if rotation == 0:
+                rotation = 90
+            else:
+                rotation = 0
+            #debug("*** LaserCut.FitPanelRotatable(B): deltaY = ",deltaY,", lengthY = ",lengthY)
+            deltaY = max(deltaY,lengthY+10)
+            return (True, currentX, currentY, lengthX, lengthY, deltaY, rotation)
+        elif currentY+deltaY+lengthX < maxY and \
+             minX+lengthY < maxX:
+            temp = lengthX
+            lengthX = lengthY
+            lengthY = temp
+            if rotation == 0:
+                rotation = 90
+            else:
+                rotation = 0
+            currentX = minX
+            currentY += deltaY
+            return (True, currentX, currentY, lengthX, lengthY+10, deltaY, rotation)
+        else:
+            return (False, lastX, lastY, lengthX, lengthY, deltaY, rotation)
+    @staticmethod
+    def FitPanelNonRotatable(lastX,lastY,lengthX,lengthY,deltaY,minX,minY,maxX,maxY):
+        currentX = lastX
+        currentY = lastY
+        rotation = 0
+        if currentX+lengthX < maxX and \
+           currentY+lengthY < maxY:
+            #debug("*** LaserCut.FitPanelNonRotatable(A): deltaY = ",deltaY,", lengthY = ",lengthY)
+            deltaY = max(deltaY,lengthY+3.175)
+            return (True, currentX, currentY, lengthX, lengthY, deltaY, rotation)
+        elif currentX+lengthX > maxX and \
+           currentY+lengthY+deltaY < maxY and \
+           minX+lengthX < maxX:
+            currentX = minX
+            currentY += deltaY
+            return (True, currentX, currentY, lengthX, lengthY+3.175, deltaY, rotation)
+        else:
+            return (False, lastX, lastY, lengthX, lengthY, deltaY, rotation)
+    def __AddCut(self,shape,direction=Base.Vector(0,0,1),rotatable=True):
+        #debug("*** LaserCut.__AddCut(%s,%s,%s,%s)"%(self,shape,direction,rotatable))
+        bbox = shape.BoundBox
+        minX = 6.35
+        minY = 6.35
+        maxX = self.SheetWidth-6.35
+        maxY = self.SheetLength-6.35
+        lengthX = 0
+        lengthY = 0
+        if direction.x != 0:
+            lengthX = bbox.YLength
+            lengthY = bbox.ZLength
+        elif direction.y != 0:
+            lengthX = bbox.XLength
+            lengthY = bbox.ZLength
+        else: # direction.z != 0
+            lengthX = bbox.XLength
+            lengthY = bbox.YLength
+        if rotatable:
+            fitP, currentX, currentY, lengthX, lengthY, NewdeltaY, rotation =\
+                LaserCut.FitPanelRotatable(self.lastX,self.lastY,
+                                           lengthX,lengthY,
+                                           self.deltaY,minX,minY,maxX,maxY)
+        else:
+            fitP, currentX, currentY, lengthX, lengthY, NewdeltaY, rotation =\
+                LaserCut.FitPanelNonRotatable(self.lastX,self.lastY,
+                                              lengthX,lengthY,
+                                              self.deltaY,minX,minY,maxX,maxY)
+        
+        if not fitP:
+            #debug("*** LaserCut.__AddCut(%s,...) failed"%(self))
+            return False
+        #debug("*** LaserCut.__AddCut(%s,...) currentX is %.4f, currentY is %.4f, lengthX is %.4f, lengthY is %.4f, NewdeltaY is %.4f, rotation is %f"%(self,currentX, currentY, lengthX, lengthY, NewdeltaY, rotation))
+        obj = self.Document().addObject("Part::Feature",self.ObjName())
+        obj.Shape = shape
+        obj.ViewObject.Visibility = False
+        panel = self.Document().addObject('TechDraw::DrawViewPart',self.ObjName()+"_View")
+        self.page.addView(panel)
+        panel.Source = obj
+        panel.X = currentX+lengthX/2
+        panel.Y = currentY+lengthY/2
+        panel.Rotation = rotation
+        panel.Direction = direction
+        self.IncrObjNum()
+        self.Document().recompute()
+        self.lastX = currentX+lengthX+3.175
+        self.lastY = currentY
+        self.deltaY = NewdeltaY
+        return True
     def finish(self):
-        pass            
-                
+        #debug("*** LaserCut.finish(%s)"%(self))
+        self.Document().recompute()
+        sleep(500)
+        TechDrawGui.exportPageAsSvg(self.page,
+                                    os.path.join(os.path.dirname(__file__),
+                                                 self.filename))
+    @classmethod
+    def Flush(cls):
+        if cls.__currentSheet != None:
+            cls.__currentSheet.finish()
+            cls.__currentSheet = None                
             
 class CopolysterSSC_104Cut(LaserCut):
     @property
@@ -190,14 +325,6 @@ class CopolysterSSC_104Cut(LaserCut):
     def __init__(self):
         self.Init()
         # remaining init...
-    def AddCut_(self,shape,direction=Base.Vector(0,0,1)):
-        debug("%s.AddCut_(%s,%s,%s)",self.__class__.__name__,self,shape,direction)
-        pass
-    def FitP_(self,XLength,YLength):
-        debug("%s.FitP_(%s,%s,%s)",self.__class__.__name__,self,XLength,YLength)
-        return True
-    def finish(self):
-        debug("%s.finish(%s)",elf.__class__.__name__,self)
 
 class BricksPS_97Cut(LaserCut):
     @property
@@ -215,13 +342,6 @@ class BricksPS_97Cut(LaserCut):
     def __init__(self):
         self.Init()
         # remaining init...
-    def AddCut_(self,shape,direction=Base.Vector(0,0,1)):
-        debug("%s.AddCut_(%s,%s,%s)",self.__class__.__name__,self,shape,direction)
-    def FitP_(self,XLength,YLength):
-        debug("%s.FitP_(%s,%s,%s)",self.__class__.__name__,self,XLength,YLength)
-        return True
-    def finish(self):
-        debug("%s.finish(%s)",elf.__class__.__name__,self)
 
 class StyreneSSS_10824Cut(LaserCut):
     @property
@@ -229,21 +349,14 @@ class StyreneSSS_10824Cut(LaserCut):
         return .080*25.4
     @property
     def SheetWidth(self):
-        return 300
+        return 600
     @property
     def SheetLength(self):
-        return 600
+        return 300
     @property
     def SheetTemplate(self):
         return os.path.join(os.path.dirname(__file__),"CutPanel300x600.svg")
     def __init__(self):
         self.Init()
         # remaining init...
-    def AddCut_(self,shape,direction=Base.Vector(0,0,1)):
-        debug("%s.AddCut_(%s,%s,%s)",self.__class__.__name__,self,shape,direction)
-    def FitP_(self,XLength,YLength):
-        debug("%s.FitP_(%s,%s,%s)",self.__class__.__name__,self,XLength,YLength)
-        return True
-    def finish(self):
-        debug("%s.finish(%s)",elf.__class__.__name__,self)
 
