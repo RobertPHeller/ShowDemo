@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260509.1645>
+#  Last Modified : <260509.1921>
 #
 #  Description	
 #
@@ -2326,12 +2326,12 @@ class OverStation(BOMHelper, PartsHelper):
                                             self.__PlatformStairTotalRise,
                                             self.__PlatformStairWidth)+
                                         self.__MainWallWidth+
-                                        self.__GlassWallWidth,
+                                        self.__GlassWallWidth+.12,
                                        self.__PlatformStairWidth+
                                         self.__MainWallWidth+
                                         self.__GlassWallWidth,
                                        self.stairShelterOrigin1.add(
-                                        Base.Vector(.12,
+                                        Base.Vector(0,
                                                     -(self.__PlatformStairWidth+
                                                       self.__GlassWallWidth+
                                                       self.__MainWallWidth),
@@ -2342,12 +2342,12 @@ class OverStation(BOMHelper, PartsHelper):
                                             self.__PlatformStairTotalRise,
                                             self.__PlatformStairWidth)+
                                         self.__MainWallWidth+
-                                        self.__GlassWallWidth,
+                                        self.__GlassWallWidth+.12,
                                        self.__PlatformStairWidth+
                                         self.__MainWallWidth+
                                         self.__GlassWallWidth,
                                        self.stairShelterOrigin2.add(
-                                        Base.Vector(.12,
+                                        Base.Vector(0,
                                                     -(self.__PlatformStairWidth),
                                                     wallZOff+
                                                         self.__StationHeight))
