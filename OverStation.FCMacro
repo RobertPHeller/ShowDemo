@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260508.1736>
+#  Last Modified : <260508.2032>
 #
 #  Description	
 #
@@ -2372,9 +2372,10 @@ if __name__ == '__main__':
     if "OverStation" in App.listDocuments().keys():
         App.closeDocument("OverStation")
     doc = App.newDocument("OverStation")
-    doc = App.activeDocument()
     station = OverStation("Station",Base.Vector(0,0,0))
     station.show(doc)
+    App.ActiveDocument=doc
+    Gui.ActiveDocument=doc
     Gui.activeDocument().activeView().viewTop()
     Gui.SendMsgToActiveView("ViewFit")
     OverStation.ListParts("OverStationParts.csv")

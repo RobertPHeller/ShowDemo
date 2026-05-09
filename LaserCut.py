@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-05-08 11:42:13
-#  Last Modified : <260508.1741>
+#  Last Modified : <260508.2022>
 #
 #  Description	
 #
@@ -102,6 +102,9 @@ class LaserCut(object):
     @abstractproperty
     def SheetLength(self):
         pass
+    @abstractproperty
+    def SheetTemplate(self):
+        pass
     __currentSheet = None
     @classmethod
     def Sheet(cls):
@@ -111,9 +114,23 @@ class LaserCut(object):
     @classmethod
     def Document(cls):
         return cls.__currentDocument
+    __pageNum = 0
     @classmethod
-    def Init(cls,self):
-        #debug("*** Testing.Init(%s,%s)",cls,self)
+    def PageNum(cls):
+        return cls.__pageNum
+    @classmethod
+    def IncrPageNum(cls):
+        cls.__pageNum += 1
+    @classmethod
+    def NewPage(cls):
+        cls.IncrPageNum()
+        page = cls.Document().addObject('TechDraw::DrawPage',"%sPage_%03d"%(cls.__name__,cls.PageNum()))
+        page.Template = cls.template
+        page.ViewObject.show()
+        return page
+    def Init(self):
+        #debug("*** Testing.Init(%s)",self)
+        cls = self.__class__
         if cls.__currentSheet != None:
             __currentSheet.finish()
         cls.__currentSheet = self
@@ -122,6 +139,10 @@ class LaserCut(object):
         cls.__sheetList.append(self)
         if cls.__currentDocument == None:
             cls.__currentDocument = App.newDocument(cls.__name__)
+            cls.template = cls.__currentDocument.addObject('TechDraw::DrawSVGTemplate','CutPanelTemplate')
+            cls.template.Template = self.SheetTemplate
+        self.page = cls.NewPage()
+        
     @classmethod
     def AddCut(cls,shape):
         #debug("%s.AddCut(%s,%s)",cls,cls,shape)
@@ -159,12 +180,15 @@ class CopolysterSSC_104Cut(LaserCut):
         return .040*25.4
     @property
     def SheetWidth(self):
-        return 175
+        return 300
     @property
     def SheetLength(self):
-        return 300
+        return 175
+    @property
+    def SheetTemplate(self):
+        return os.path.join(os.path.dirname(__file__),"CutPanel300x175.svg")
     def __init__(self):
-        self.Init(self)
+        self.Init()
         # remaining init...
     def AddCut_(self,shape,direction=Base.Vector(0,0,1)):
         debug("%s.AddCut_(%s,%s,%s)",self.__class__.__name__,self,shape,direction)
@@ -185,8 +209,11 @@ class BricksPS_97Cut(LaserCut):
     @property
     def SheetLength(self):
         return 175
+    @property
+    def SheetTemplate(self):
+        return os.path.join(os.path.dirname(__file__),"CutPanel300x175.svg")
     def __init__(self):
-        self.Init(self)
+        self.Init()
         # remaining init...
     def AddCut_(self,shape,direction=Base.Vector(0,0,1)):
         debug("%s.AddCut_(%s,%s,%s)",self.__class__.__name__,self,shape,direction)
@@ -206,8 +233,11 @@ class StyreneSSS_10824Cut(LaserCut):
     @property
     def SheetLength(self):
         return 600
+    @property
+    def SheetTemplate(self):
+        return os.path.join(os.path.dirname(__file__),"CutPanel300x600.svg")
     def __init__(self):
-        self.Init(self)
+        self.Init()
         # remaining init...
     def AddCut_(self,shape,direction=Base.Vector(0,0,1)):
         debug("%s.AddCut_(%s,%s,%s)",self.__class__.__name__,self,shape,direction)
