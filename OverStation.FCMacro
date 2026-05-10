@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260509.1921>
+#  Last Modified : <260510.0748>
 #
 #  Description	
 #
@@ -348,6 +348,7 @@ class OverStation(BOMHelper, PartsHelper):
         self.doorCut = doorCut
         return doorCut
     def __init__(self,name,origin):
+        LaserCut.LaserCut.SetPrefix("OverStation")
         self.name = name
         if not isinstance(origin,Base.Vector):
             raise RuntimeError("origin is not a Vector!")

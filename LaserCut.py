@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-05-08 11:42:13
-#  Last Modified : <260509.1453>
+#  Last Modified : <260510.0744>
 #
 #  Description	
 #
@@ -296,18 +296,26 @@ class LaserCut(object):
         self.lastY = currentY
         self.deltaY = NewdeltaY
         return True
+    __Prefix = ""
+    @classmethod
+    def SetPrefix(cls,prefix):
+        cls.__Prefix = prefix
+    @classmethod
+    def GetPrefix(cls):
+        return cls.__Prefix
     def finish(self):
         #debug("*** LaserCut.finish(%s)"%(self))
         self.Document().recompute()
         sleep(500)
         TechDrawGui.exportPageAsSvg(self.page,
                                     os.path.join(os.path.dirname(__file__),
-                                                 self.filename))
+                                                 self.GetPrefix()+self.filename))
     @classmethod
     def Flush(cls):
         if cls.__currentSheet != None:
             cls.__currentSheet.finish()
-            cls.__currentSheet = None                
+            cls.__currentSheet = None
+                    
             
 class CopolysterSSC_104Cut(LaserCut):
     @property
