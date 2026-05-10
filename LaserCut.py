@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-05-08 11:42:13
-#  Last Modified : <260510.0839>
+#  Last Modified : <260510.1250>
 #
 #  Description	
 #
@@ -358,6 +358,23 @@ class StyreneSSS_10824Cut(LaserCut):
     @property
     def SheetThick(self):
         return .080*25.4
+    @property
+    def SheetWidth(self):
+        return 600
+    @property
+    def SheetLength(self):
+        return 300
+    @property
+    def SheetTemplate(self):
+        return os.path.join(os.path.dirname(__file__),"CutPanel300x600.svg")
+    def __init__(self):
+        self.Init()
+        # remaining init...
+
+class StyreneSSS_10224Cut(LaserCut):
+    @property
+    def SheetThick(self):
+        return .020*25.4
     @property
     def SheetWidth(self):
         return 600

@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-04-23 14:00:08
-#  Last Modified : <260510.0748>
+#  Last Modified : <260510.1259>
 #
 #  Description	
 #
@@ -206,6 +206,7 @@ class OverStation(BOMHelper, PartsHelper):
     __GlassWallWidth  = .040*25.4 
     __PlastructPS_97Thick = .020*25.4
     __PlatformRoofThickness = .080*25.4
+    __CeilingAndRoofThickness = .020*25.4
     __StairRiser         = Units.mm(Units.HOScale(5.5))
     __StairTread         = Units.mm(Units.HOScale(11))
     __PostOffset         = Units.mm(Units.HOScale(Units.inches(5)))
@@ -881,10 +882,10 @@ class OverStation(BOMHelper, PartsHelper):
                                                     self.__PlatformRoofThickness+
                                                         self.__VestibleHeight))
                         ).extrude(Base.Vector(0,0,
-                                              self.__PlatformRoofThickness))
+                                              self.__CeilingAndRoofThickness))
         bb1 = self.vestibleCeilingLeft.BoundBox                                              
-        self.AddPiece(bb1.XLength,bb.YLength,".080 Styreen (SSS-10824)")
-        LaserCut.StyreneSSS_10824Cut.AddCut(self.vestibleCeilingLeft)
+        self.AddPiece(bb1.XLength,bb.YLength,".020 Styreen (SSS-10224)")
+        LaserCut.StyreneSSS_10224Cut.AddCut(self.vestibleCeilingLeft)
         leftwall = leftwall.cut(vestibleFloor)
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
@@ -1074,10 +1075,10 @@ class OverStation(BOMHelper, PartsHelper):
                                                     self.__PlatformRoofThickness+
                                                         self.__VestibleHeight))
                         ).extrude(Base.Vector(0,0,
-                                              self.__PlatformRoofThickness))
+                                              self.__CeilingAndRoofThickness))
         bb1 = self.vestibleCeilingRight.BoundBox                                              
-        self.AddPiece(bb1.XLength,bb.YLength,".080 Styreen (SSS-10824)")
-        LaserCut.StyreneSSS_10824Cut.AddCut(self.vestibleCeilingRight)
+        self.AddPiece(bb1.XLength,bb.YLength,".020 Styreen (SSS-10224)")
+        LaserCut.StyreneSSS_10224Cut.AddCut(self.vestibleCeilingRight)
         rightwall = rightwall.cut(vestibleFloor)
         windowOrigin = Base.Vector(bb.XMin,
                                    bb.YMin+self.__PlastructPS_97Thick+
@@ -2315,14 +2316,14 @@ class OverStation(BOMHelper, PartsHelper):
                                                     self.__PlatformHeight+
                                                     self.__StationHeight+
                                                     self.__PlatformRoofThickness))
-                  ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+                  ).extrude(Base.Vector(0,0,self.__CeilingAndRoofThickness))
         ceil2 = Part.makePlane(self.__MainStationWidth,
                                 self.__MainStationLength,
                                 stationOrigin.add(
                                     Base.Vector(0,0,
                                                 self.__PlatformRoofThickness+
                                                     self.__StationHeight))
-               ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+               ).extrude(Base.Vector(0,0,self.__CeilingAndRoofThickness))
         stair1Ceiling = Part.makePlane(self.__TotalStairLength(
                                             self.__PlatformStairTotalRise,
                                             self.__PlatformStairWidth)+
@@ -2338,7 +2339,7 @@ class OverStation(BOMHelper, PartsHelper):
                                                       self.__MainWallWidth),
                                                     wallZOff+
                                                         self.__StationHeight))
-                        ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+                        ).extrude(Base.Vector(0,0,self.__CeilingAndRoofThickness))
         stair2Ceiling = Part.makePlane(self.__TotalStairLength(
                                             self.__PlatformStairTotalRise,
                                             self.__PlatformStairWidth)+
@@ -2352,25 +2353,25 @@ class OverStation(BOMHelper, PartsHelper):
                                                     -(self.__PlatformStairWidth),
                                                     wallZOff+
                                                         self.__StationHeight))
-                        ).extrude(Base.Vector(0,0,self.__PlatformRoofThickness))
+                        ).extrude(Base.Vector(0,0,self.__CeilingAndRoofThickness))
         self.ceiling = ceil1.fuse(ceil2).fuse(stair1Ceiling
                                 ).fuse(stair2Ceiling)
         bb = self.ceiling.BoundBox
-        LaserCut.StyreneSSS_10824Cut.AddCut(self.ceiling)
-        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
+        LaserCut.StyreneSSS_10224Cut.AddCut(self.ceiling)
+        self.AddPiece(bb.XLength,bb.YLength,".020 Styreen (SSS-10224)")
         # roof
-        self.roof = self.ceiling.copy().translate(Base.Vector(0,0,.125*25.4))
+        self.roof = self.ceiling.copy().translate(Base.Vector(0,0,self.__CeilingAndRoofThickness+.125*25.4))
         bb = self.roof.BoundBox
-        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
-        LaserCut.StyreneSSS_10824Cut.AddCut(self.roof)
-        self.vestibleRoofRight = self.vestibleCeilingRight.copy().translate(Base.Vector(0,0,.125*25.4))
+        self.AddPiece(bb.XLength,bb.YLength,".020 Styreen (SSS-10224)")
+        LaserCut.StyreneSSS_10224Cut.AddCut(self.roof)
+        self.vestibleRoofRight = self.vestibleCeilingRight.copy().translate(Base.Vector(0,0,.125*25.4+self.__CeilingAndRoofThickness))
         bb = self.vestibleRoofRight.BoundBox
-        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
-        LaserCut.StyreneSSS_10824Cut.AddCut(self.vestibleRoofRight)
-        self.vestibleRoofLeft = self.vestibleCeilingLeft.copy().translate(Base.Vector(0,0,.125*25.4))
+        self.AddPiece(bb.XLength,bb.YLength,".020 Styreen (SSS-10224)")
+        LaserCut.StyreneSSS_10224Cut.AddCut(self.vestibleRoofRight)
+        self.vestibleRoofLeft = self.vestibleCeilingLeft.copy().translate(Base.Vector(0,0,.125*25.4+self.__CeilingAndRoofThickness))
         bb = self.vestibleRoofLeft.BoundBox
-        self.AddPiece(bb.XLength,bb.YLength,".080 Styreen (SSS-10824)")
-        LaserCut.StyreneSSS_10824Cut.AddCut(self.vestibleRoofLeft)
+        self.AddPiece(bb.XLength,bb.YLength,".020 Styreen (SSS-10224)")
+        LaserCut.StyreneSSS_10224Cut.AddCut(self.vestibleRoofLeft)
         self.AddPart("Tichy Train Group #8193 Strap Railing")
     def show(self,doc=None):
         if doc==None:
@@ -2482,5 +2483,6 @@ if __name__ == '__main__':
     LaserCut.CopolysterSSC_104Cut.Flush()
     LaserCut.BricksPS_97Cut.Flush()
     LaserCut.StyreneSSS_10824Cut.Flush() 
+    LaserCut.StyreneSSS_10224Cut.Flush() 
 
 

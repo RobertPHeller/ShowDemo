@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260510.0834>
+#  Last Modified : <260510.1247>
 #
 #  Description	
 #
@@ -192,7 +192,7 @@ class UnderStation(BOMHelper, PartsHelper):
         return self.__StairTread/self.__StairRiser
     __StairLandingRiseMax = Units.mm(Units.inches(Units.HOScale( 12 )))
     __StairHeadRoomMin    = Units.mm(Units.HOScale(80))
-    __PlatformStairWidth  = Units.mm(Units.inches(Units.HOScale( 7 )))
+    __PlatformStairWidth  = Units.mm(Units.inches(Units.HOScale( 6 )))
     @property
     def __PlatformStairLanding(self):
         return self.__StairHeadRoom
