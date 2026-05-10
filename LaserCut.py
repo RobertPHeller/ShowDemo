@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-05-08 11:42:13
-#  Last Modified : <260510.0744>
+#  Last Modified : <260510.0839>
 #
 #  Description	
 #
@@ -167,19 +167,22 @@ class LaserCut(object):
                 return
             x = cls.__new__(cls)
             if isinstance(x,cls): x.__init__()
-            cls.__currentSheet.__AddCut(shape,Base.Vector(dir,0,0),rotatable)
+            if not cls.__currentSheet.__AddCut(shape,Base.Vector(dir,0,0),rotatable):
+                raise RuntimeError("Can't add cut: XLength is %.4f, YLength is %.4f, ZLength is %.4f, Sheet Type is %s",bb.XLength,bb.YLength,bb.ZLength,cls.__name_)
         elif round(bb.YLength,3) == round(cls.__currentSheet.SheetThick,3):
             if cls.__currentSheet.__AddCut(shape,Base.Vector(0,dir,0),rotatable):
                 return
             x = cls.__new__(cls)
             if isinstance(x,cls): x.__init__()
-            cls.__currentSheet.__AddCut(shape,Base.Vector(0,dir,0),rotatable)
+            if not cls.__currentSheet.__AddCut(shape,Base.Vector(0,dir,0),rotatable):
+                raise RuntimeError("Can't add cut: XLength is %.4f, YLength is %.4f, ZLength is %.4f, Sheet Type is %s",bb.XLength,bb.YLength,bb.ZLength,cls.__name_)
         else:
             if cls.__currentSheet.__AddCut(shape,Base.Vector(0,0,dir),rotatable):
                 return
             x = cls.__new__(cls)
             if isinstance(x,cls): x.__init__()
-            cls.__currentSheet.__AddCut(shape,Base.Vector(0,0,dir),rotatable)
+            if not cls.__currentSheet.__AddCut(shape,Base.Vector(0,0,dir),rotatable):
+                raise RuntimeError("Can't add cut: XLength is %.4f, YLength is %.4f, ZLength is %.4f, Sheet Type is %s",bb.XLength,bb.YLength,bb.ZLength,cls.__name_)
     @staticmethod
     def FitPanelRotatable(lastX,lastY,lengthX,lengthY,deltaY,minX,minY,maxX,maxY):
         currentX = lastX
