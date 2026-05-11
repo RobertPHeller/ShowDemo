@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-05-08 11:42:13
-#  Last Modified : <260510.1250>
+#  Last Modified : <260511.1413>
 #
 #  Description	
 #
@@ -298,6 +298,9 @@ class LaserCut(object):
         self.lastX = currentX+lengthX+3.175
         self.lastY = currentY
         self.deltaY = NewdeltaY
+        if (self.lastX + 10) > maxX:
+            self.lastX = minX
+            self.lastY += self.deltaY
         return True
     __Prefix = ""
     @classmethod

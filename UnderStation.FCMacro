@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-01-28 19:32:47
-#  Last Modified : <260510.1247>
+#  Last Modified : <260511.1405>
 #
 #  Description	
 #
@@ -648,6 +648,15 @@ class UnderStation(BOMHelper, PartsHelper):
                                             -(self.__TotalStationHeight+self.__StationUnderOffset))),
                               Base.Vector(0,1,0))\
             .extrude(Base.Vector(0,self.__MainWallWidth,0)))
+        wall = wall.cut(Part.makePlane(Units.mm(.25),
+                                       self.__LongPlatformLength+
+                                        (2*self.__MainWallWidth),
+                                       origin.add(
+                                        Base.Vector(-self.__MainWallWidth,
+                                                    self.__CombinedTrackAndPlatformWidth,
+                                                    -Units.mm(.25))),
+                                       Base.Vector(0,1,0))\
+            .extrude(Base.Vector(0,self.__MainWallWidth,0)))
         LaserCut.StyreneSSS_10824Cut.AddCut(wall)
         wall1 = Part.makePlane(self.__TotalStationHeight,
                                         self.__CombinedTrackAndPlatformWidth+\
@@ -732,27 +741,41 @@ class UnderStation(BOMHelper, PartsHelper):
         ceiling = ceiling.cut(self.platform2Elevator.shaft)
         LaserCut.StyreneSSS_10824Cut.AddCut(ceiling)
         stairwaywall1 = Part.makePlane(self.__TotalStationHeight+\
-                                        self.__StationUnderOffset,
-                                       platformStairLen,
+                                        self.__StationUnderOffset-
+                                        Units.mm(.25),
+                                       platformStairLen-self.__MainWallWidth,
                                        self.platform1StairOrigin.add(
-                                        Base.Vector(0,0,0)),
+                                        Base.Vector(self.__MainWallWidth,0,0)),
                                        Base.Vector(0,1,0))\
                 .extrude(Base.Vector(0,-self.__MainWallWidth,0))
         bb = stairwaywall1.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
         LaserCut.StyreneSSS_10824Cut.AddCut(stairwaywall1)
         stairwaywall2 = Part.makePlane(self.__TotalStationHeight+\
-                                        self.__StationUnderOffset,
-                                       platformStairLen,
+                                        self.__StationUnderOffset-
+                                        Units.mm(.25),
+                                       platformStairLen-self.__MainWallWidth,
                                        self.platform2StairOrigin.add(
-                                        Base.Vector(0,
+                                        Base.Vector(self.__MainWallWidth,
                                                     self.__PlatformStairWidth,0)),
                                        Base.Vector(0,1,0))\
                 .extrude(Base.Vector(0,self.__MainWallWidth,0))
-        LaserCut.StyreneSSS_10824Cut.AddCut(stairwaywall2)
         bb = stairwaywall1.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)")
-        self.walls = wall.fuse(ceiling).fuse(stairwaywall1).fuse(stairwaywall2)
+        LaserCut.StyreneSSS_10824Cut.AddCut(stairwaywall2)
+        stairbackwall = Part.makePlane(self.__StationUnderOffset-
+                                        Units.mm(.25)-
+                                        self.__MainWallWidth,
+                                       self.__CombinedTrackAndPlatformWidth,
+                                       self.platform1StairOrigin.add(
+                                        Base.Vector(0,self.__PlatformStairWidth,self.__TotalStationHeight+self.__MainWallWidth)),
+                                       Base.Vector(1,0,0))\
+                       .extrude(Base.Vector(self.__MainWallWidth,0,0))
+        bb = stairbackwall.BoundBox
+        self.AddPiece(bb.YLength,bb.ZLength,".080 Styreen (SSS-10824)")
+        LaserCut.StyreneSSS_10824Cut.AddCut(stairbackwall)
+        self.walls = wall.fuse(ceiling).fuse(stairwaywall1
+                ).fuse(stairwaywall2).fuse(stairbackwall)
         rearHeight = self.streetElevator.shaft.BoundBox.ZLength
         rearwall1 = Part.makePlane(rearHeight,
                                    self.__LongPlatformLength+
@@ -767,6 +790,16 @@ class UnderStation(BOMHelper, PartsHelper):
                         ).extrude(Base.Vector(0,self.__MainWallWidth,0))
         bb = rearwall1.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)") 
+        rearwall1 = rearwall1.cut(Part.makePlane(Units.mm(.25),
+                                                 self.__LongPlatformLength+
+                                                    (2*self.__MainWallWidth),
+                                                 origin.add(Base.Vector(
+                                                    -self.__MainWallWidth,
+                                                    self.__TotalStationDepth+
+                                                        self.__MainWallWidth,
+                                                    -Units.mm(.25))),
+                                                  Base.Vector(0,1,0)
+                          ).extrude(Base.Vector(0,self.__MainWallWidth,0)))
         LaserCut.StyreneSSS_10824Cut.AddCut(rearwall1)
         self.walls = self.walls.fuse(rearwall1)
         rearwall1 = Part.makePlane(rearHeight,
@@ -781,6 +814,17 @@ class UnderStation(BOMHelper, PartsHelper):
                                           self.__StationUnderOffset))),
                                    Base.Vector(0,1,0)
                         ).extrude(Base.Vector(0,self.__MainWallWidth,0))
+        rearwall1 = rearwall1.cut(Part.makePlane(Units.mm(.25),
+                                                 self.__LongPlatformLength-
+                                                    (3*self.__StreetStairWidth)+
+                                                    Elevator.ShaftWidth,
+                                                 origin.add(Base.Vector(
+                                                    self.__StreetStairWidth,
+                                                    self.__TotalStationDepth-
+                                                        self.__StreetStairWidth,
+                                                    -Units.mm(.25))),
+                                                 Base.Vector(0,1,0)
+                         ).extrude(Base.Vector(0,self.__MainWallWidth,0)))
         bb = rearwall1.BoundBox
         self.AddPiece(bb.XLength,bb.ZLength,".080 Styreen (SSS-10824)") 
         LaserCut.StyreneSSS_10824Cut.AddCut(rearwall1)
@@ -852,6 +896,18 @@ class UnderStation(BOMHelper, PartsHelper):
                      ).extrude(Base.Vector(self.__MainWallWidth,0,0))
         bb = backwall.BoundBox
         self.AddPiece(bb.ZLength,bb.YLength,".080 Styreen (SSS-10824)")
+        backwall = backwall.cut(Part.makePlane(Units.mm(.25),
+                                               Elevator.ShaftLength+
+                                                (1*self.__MainWallWidth)+
+                                                self.__StreetStairWidth,
+                                               origin.add(Base.Vector(-self.__MainWallWidth,
+                                                         self.__CombinedTrackAndPlatformWidth+
+                                                            (2*self.__MainWallWidth)+
+                                                         Elevator.ShaftLength+
+                                                           self.__StreetStairWidth+.11,
+                                                         -Units.mm(.25))),
+                                                Base.Vector(1,0,0)
+                     ).extrude(Base.Vector(self.__MainWallWidth,0,0)))
         LaserCut.StyreneSSS_10824Cut.AddCut(backwall)
         self.walls = self.walls.fuse(backwall)
         #self.AddPart("Tichy Train Group #8195 Single Glass Door",4)
