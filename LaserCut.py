@@ -8,7 +8,7 @@
 #  Author        : $Author$
 #  Created By    : Robert Heller
 #  Created       : 2026-05-08 11:42:13
-#  Last Modified : <260511.1413>
+#  Last Modified : <260512.0709>
 #
 #  Description	
 #
@@ -197,14 +197,15 @@ class LaserCut(object):
         if currentX+lengthX < maxX and \
            currentY+lengthY < maxY:
             #debug("*** LaserCut.FitPanelRotatable(A): deltaY = ",deltaY,", lengthY = ",lengthY)
-            deltaY = max(deltaY,lengthY+10)
+            deltaY = max(deltaY,lengthY+3.175)
             return (True, currentX, currentY, lengthX, lengthY, deltaY, rotation)
         elif currentX+lengthX > maxX and \
            currentY+lengthY+deltaY < maxY and \
            minX+lengthX < maxX:
             currentX = minX
             currentY += deltaY
-            return (True, currentX, currentY, lengthX, lengthY+10, deltaY, rotation)
+            deltaY = max(deltaY,lengthY+3.175) 
+            return (True, currentX, currentY, lengthX, lengthY+3.175, deltaY, rotation)
         elif currentY+lengthY > maxY and \
              currentY+lengthX < maxY and \
              currentX+lengthY < maxX:
@@ -216,7 +217,7 @@ class LaserCut(object):
             else:
                 rotation = 0
             #debug("*** LaserCut.FitPanelRotatable(B): deltaY = ",deltaY,", lengthY = ",lengthY)
-            deltaY = max(deltaY,lengthY+10)
+            deltaY = max(deltaY,lengthY+3.175)
             return (True, currentX, currentY, lengthX, lengthY, deltaY, rotation)
         elif currentY+deltaY+lengthX < maxY and \
              minX+lengthY < maxX:
@@ -229,7 +230,8 @@ class LaserCut(object):
                 rotation = 0
             currentX = minX
             currentY += deltaY
-            return (True, currentX, currentY, lengthX, lengthY+10, deltaY, rotation)
+            deltaY = max(deltaY,lengthY+3.175) 
+            return (True, currentX, currentY, lengthX, lengthY+3.175, deltaY, rotation)
         else:
             return (False, lastX, lastY, lengthX, lengthY, deltaY, rotation)
     @staticmethod
@@ -247,6 +249,7 @@ class LaserCut(object):
            minX+lengthX < maxX:
             currentX = minX
             currentY += deltaY
+            deltaY = max(deltaY,lengthY+3.175) 
             return (True, currentX, currentY, lengthX, lengthY+3.175, deltaY, rotation)
         else:
             return (False, lastX, lastY, lengthX, lengthY, deltaY, rotation)
@@ -298,7 +301,7 @@ class LaserCut(object):
         self.lastX = currentX+lengthX+3.175
         self.lastY = currentY
         self.deltaY = NewdeltaY
-        if (self.lastX + 10) > maxX:
+        if (self.lastX + 3.175) > maxX:
             self.lastX = minX
             self.lastY += self.deltaY
         return True
